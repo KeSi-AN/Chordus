@@ -64,7 +64,7 @@ export function AudioPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">Audio</h2>
+        <h2 className="text-sm font-semibold">Audio &amp; pitch shift</h2>
         <input
           ref={fileInput}
           type="file"
@@ -90,7 +90,8 @@ export function AudioPanel({
         <Player key={audio.id} songId={songId} source={audio} prefs={prefs} />
       ) : (
         <p className="text-sm text-muted-foreground">
-          Attach an MP3 (or M4A, WAV, OGG, FLAC) to play along with pitch shifting.
+          Attach an MP3 (or M4A, WAV, OGG, FLAC) of this song. Then press play and use Pitch − / +
+          to shift it to your key without changing the tempo.
         </p>
       )}
     </div>
