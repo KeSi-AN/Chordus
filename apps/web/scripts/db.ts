@@ -1,11 +1,13 @@
 /**
- * DB maintenance CLI: `tsx scripts/db.ts migrate|seed|reset`.
+ * DB maintenance CLI: `tsx scripts/db.ts migrate|seed|reset|setup`.
+ * `setup` (run before `pnpm dev`) migrates, and seeds only a brand-new database.
  * Reads DATABASE_URL / DATA_DIR from the repo-root .env (see .env.example).
  */
 import { loadEnvConfig } from "@next/env";
 import fs from "node:fs";
 import { createDb, runMigrations } from "../src/server/db/client";
 import { findRepoRoot, getServerConfig } from "../src/server/env";
+import { users } from "../src/server/db/schema";
 import { seedDatabase } from "../src/server/seed/seed";
 
 loadEnvConfig(findRepoRoot());
@@ -27,7 +29,7 @@ async function main(): Promise<void> {
 
   const { db, client } = await createDb(cfg.databaseUrl, cfg.databaseAuthToken);
   try {
-    if (cmd === "migrate" || cmd === "reset") {
+    if (cmd === "migrate" || cmd === "reset" || cmd === "setup") {
       await runMigrations(db);
       console.log(`Migrated ${cfg.databaseUrl}`);
     }
@@ -35,8 +37,12 @@ async function main(): Promise<void> {
       await seedDatabase(db);
       console.log("Seeded default user, strum presets and sample songs");
     }
-    if (!["migrate", "seed", "reset"].includes(cmd ?? "")) {
-      console.error("Usage: tsx scripts/db.ts migrate|seed|reset");
+    if (cmd === "setup" && (await db.select({ id: users.id }).from(users).limit(1)).length === 0) {
+      await seedDatabase(db);
+      console.log("Seeded new database");
+    }
+    if (!["migrate", "seed", "reset", "setup"].includes(cmd ?? "")) {
+      console.error("Usage: tsx scripts/db.ts migrate|seed|reset|setup");
       process.exitCode = 1;
     }
   } finally {

@@ -3,11 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "predev": "tsx scripts/db.ts setup",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db.ts migrate",
