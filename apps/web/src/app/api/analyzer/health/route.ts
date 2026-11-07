@@ -12,7 +12,8 @@ export async function GET() {
       device: body.device ?? null,
       melody: body.melody ?? null,
     });
-  } catch {
-    return Response.json({ online: false, reason: "unreachable" });
+  } catch (err) {
+    const cause = (err as { cause?: { code?: string } }).cause?.code;
+    return Response.json({ online: false, reason: cause ?? (err as Error).message, url });
   }
 }
