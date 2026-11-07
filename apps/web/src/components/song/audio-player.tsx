@@ -37,11 +37,14 @@ export function AudioPanel({
   audio,
   prefs,
   onAudioChange,
+  onPlaybackTime,
 }: {
   songId: string;
   audio: Source | null;
   prefs: SongPrefsState;
   onAudioChange: (s: Source) => void;
+  /** Media time while playing (about 10×/s) and after seeks, for synced chord highlighting. */
+  onPlaybackTime?: (seconds: number) => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -87,7 +90,13 @@ export function AudioPanel({
       </div>
       {uploadError && <p className="text-sm text-destructive">{uploadError}</p>}
       {audio ? (
-        <Player key={audio.id} songId={songId} source={audio} prefs={prefs} />
+        <Player
+          key={audio.id}
+          songId={songId}
+          source={audio}
+          prefs={prefs}
+          onPlaybackTime={onPlaybackTime}
+        />
       ) : (
         <p className="text-sm text-muted-foreground">
           Attach an MP3 (or M4A, WAV, OGG, FLAC) of this song. Then press play and use Pitch − / +
@@ -102,10 +111,12 @@ function Player({
   songId,
   source,
   prefs,
+  onPlaybackTime,
 }: {
   songId: string;
   source: Source;
   prefs: SongPrefsState;
+  onPlaybackTime?: (seconds: number) => void;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const playerRef = useRef<PitchPlayer | null>(null);
@@ -118,6 +129,23 @@ function Player({
   const [graphError, setGraphError] = useState<string | null>(null);
   const lastPlayLog = useRef(0);
   const pitch = prefs.fields.audioPitch;
+
+  // Report playback time often enough for chord highlighting (timeupdate is only ~4 Hz).
+  useEffect(() => {
+    if (!playing || !onPlaybackTime) return;
+    let raf = 0;
+    let last = 0;
+    const tick = (now: number) => {
+      const el = audioRef.current;
+      if (el && now - last > 90) {
+        last = now;
+        onPlaybackTime(el.currentTime);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, onPlaybackTime]);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -191,6 +219,7 @@ function Player({
         onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onSeeking={() => playerRef.current?.flush()}
+        onSeeked={(e) => onPlaybackTime?.(e.currentTarget.currentTime)}
       />
       <div className="truncate text-xs text-muted-foreground" title={source.originalFilename ?? ""}>
         {source.originalFilename ?? "Audio"}
