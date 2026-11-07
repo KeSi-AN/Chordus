@@ -98,8 +98,9 @@ How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/
   out as the nearest triad), one or two chords per bar, and dense mixes or fast changes need
   manual fixes. Meter detection only distinguishes 3 vs 4 beats per bar.
 - Detected sheets have chords only. Paste lyrics in via Edit.
-- The melody range needs audible singing; instrumentals and karaoke backing tracks without a
-  guide vocal get no range.
+- The melody range needs audible singing. Instrumentals and karaoke backing tracks without a
+  guide vocal get either no range or a misleading one (Demucs can pass lead instruments
+  through as "vocals"), so prefer a version with the original vocal for the range.
 - YouTube titles are split into artist/title heuristically; check them after import.
 
 ## Scripts
