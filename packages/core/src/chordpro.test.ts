@@ -8,6 +8,9 @@ import {
   sheetKey,
   transposeChordPro,
   uniqueChords,
+  countUncertain,
+  splitUncertain,
+  stripUncertainMarks,
 } from "./chordpro";
 import { formatKey } from "./keys";
 
@@ -168,5 +171,37 @@ describe("transposeChordPro", () => {
 
   it("spells for a detected key when there is no {key}", () => {
     expect(transposeChordPro("[G]a [C]b [D]c [G]d", 3)).toBe("[Bb]a [Eb]b [F]c [Bb]d");
+  });
+});
+
+describe("low-confidence chord marker", () => {
+  const DRAFT = "{key: G}\n[G]Hello [C?]there [D]friend [N.C.?]";
+
+  it("parses the marker into the segment", () => {
+    const line = parseChordPro(DRAFT).sections[0]!.lines[0]!;
+    expect(line.type === "lyrics" && line.segments[1]).toEqual({
+      chord: "C",
+      lyrics: "there ",
+      uncertain: true,
+    });
+  });
+
+  it("round-trips through serialize", () => {
+    expect(serializeChordPro(parseChordPro(DRAFT))).toContain("[C?]there");
+  });
+
+  it("survives transposition and is ignored for chord extraction", () => {
+    expect(transposeChordPro(DRAFT, 2)).toContain("[D?]there");
+    expect(extractChords(DRAFT)).toEqual(["G", "C", "D"]);
+  });
+
+  it("counts and strips markers", () => {
+    expect(countUncertain(DRAFT)).toBe(2);
+    expect(stripUncertainMarks(DRAFT)).toBe("{key: G}\n[G]Hello [C]there [D]friend [N.C.]");
+  });
+
+  it("leaves non-chord question marks alone", () => {
+    expect(stripUncertainMarks("[Why?] [?]")).toBe("[Why?] [?]");
+    expect(splitUncertain("?")).toEqual({ chord: "?", uncertain: false });
   });
 });

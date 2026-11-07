@@ -10,6 +10,40 @@ export interface Segment {
   /** Chord above this piece of lyrics (null when the lyrics start before the first chord). */
   chord: string | null;
   lyrics: string;
+  /** Chord was detected from audio with low confidence (written `[G?]` in ChordPro). */
+  uncertain?: boolean;
+}
+
+/**
+ * Chordus extension: a trailing `?` inside a chord token (`[G?]`) marks a low-confidence
+ * detected chord. It survives transposition and is removed once the sheet is checked.
+ */
+export const UNCERTAIN_MARK = "?";
+
+/** Split a chord token into its chord and the low-confidence flag. */
+export function splitUncertain(token: string): { chord: string; uncertain: boolean } {
+  const t = token.trim();
+  return t.endsWith(UNCERTAIN_MARK) && t.length > 1
+    ? { chord: t.slice(0, -1).trim(), uncertain: true }
+    : { chord: t, uncertain: false };
+}
+
+/** Remove every low-confidence marker (after the user has checked a detected sheet). */
+export function stripUncertainMarks(chordpro: string): string {
+  return chordpro.replace(CHORD_TOKEN_RE, (whole, inner: string) => {
+    const { chord, uncertain } = splitUncertain(inner);
+    return uncertain && isChordSymbol(chord) ? `[${chord}]` : whole;
+  });
+}
+
+/** Count low-confidence chords in a sheet. */
+export function countUncertain(chordpro: string): number {
+  let n = 0;
+  for (const m of chordpro.matchAll(CHORD_TOKEN_RE)) {
+    const { chord, uncertain } = splitUncertain(m[1]!);
+    if (uncertain && isChordSymbol(chord)) n++;
+  }
+  return n;
 }
 
 export type SheetLine =
@@ -90,6 +124,14 @@ export function parseDirective(line: string): Directive | null {
   return { name: DIRECTIVE_ALIASES[raw] ?? raw, value: m[2] ?? null };
 }
 
+function segment(token: string | null, lyrics: string): Segment {
+  if (token === null) return { chord: null, lyrics };
+  const { chord, uncertain } = splitUncertain(token);
+  return uncertain && isChordSymbol(chord)
+    ? { chord, lyrics, uncertain }
+    : { chord: token, lyrics };
+}
+
 /** Split a ChordPro lyric line ("A[G]mazing [G7]grace") into chord/lyric segments. */
 export function parseLyricLine(line: string): Segment[] {
   const segments: Segment[] = [];
@@ -98,14 +140,13 @@ export function parseLyricLine(line: string): Segment[] {
   for (const m of line.matchAll(CHORD_TOKEN_RE)) {
     const text = line.slice(last, m.index);
     if (pendingChord !== null || text.length > 0) {
-      segments.push({ chord: pendingChord, lyrics: text });
+      segments.push(segment(pendingChord, text));
     }
     pendingChord = m[1]!.trim();
     last = m.index + m[0].length;
   }
   const rest = line.slice(last);
-  if (pendingChord !== null || rest.length > 0)
-    segments.push({ chord: pendingChord, lyrics: rest });
+  if (pendingChord !== null || rest.length > 0) segments.push(segment(pendingChord, rest));
   return segments;
 }
 
@@ -203,7 +244,10 @@ function serializeLine(line: SheetLine): string {
       return line.text;
     case "lyrics":
       return line.segments
-        .map((s) => (s.chord !== null ? `[${s.chord}]` : "") + s.lyrics)
+        .map(
+          (s) =>
+            (s.chord !== null ? `[${s.chord}${s.uncertain ? UNCERTAIN_MARK : ""}]` : "") + s.lyrics,
+        )
         .join("")
         .replace(/\s+$/, "");
   }
@@ -250,7 +294,7 @@ export function extractChords(chordpro: string): string[] {
     if (d?.name === "end_of_tab") inTab = false;
     if (inTab || d) continue;
     for (const m of line.matchAll(CHORD_TOKEN_RE)) {
-      const c = m[1]!.trim();
+      const c = splitUncertain(m[1]!).chord;
       if (!NO_CHORD_RE.test(c) && parseChord(c)) chords.push(c);
     }
   }
@@ -294,9 +338,11 @@ export function transposeChordPro(chordpro: string, semitones: number): string {
         return line;
       }
       if (inTab || semitones % 12 === 0) return line;
-      return line.replace(CHORD_TOKEN_RE, (whole, inner: string) =>
-        isChordSymbol(inner) ? `[${transposeChord(inner.trim(), semitones, target)}]` : whole,
-      );
+      return line.replace(CHORD_TOKEN_RE, (whole, inner: string) => {
+        const { chord, uncertain } = splitUncertain(inner);
+        if (!isChordSymbol(chord)) return whole;
+        return `[${transposeChord(chord, semitones, target)}${uncertain ? UNCERTAIN_MARK : ""}]`;
+      });
     })
     .join("\n");
 }
