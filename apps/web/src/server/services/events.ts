@@ -17,6 +17,7 @@ export const EVENT_TYPES = [
   "song_created",
   "sheet_edited",
   "audio_attached",
+  "analysis_queued",
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];

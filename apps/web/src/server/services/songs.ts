@@ -185,7 +185,7 @@ export interface SongDetail {
   song: Song;
   sheet: ChordSheet | null;
   sources: Source[];
-  /** Most recent uploaded audio file, if any. */
+  /** Most recent playable audio (an upload, or audio the analyzer extracted from YouTube). */
   audio: Source | null;
 }
 
@@ -206,7 +206,7 @@ export async function getSongDetail(db: Db, userId: string, id: string): Promise
     .from(sources)
     .where(eq(sources.songId, id))
     .orderBy(desc(sources.createdAt), desc(sql`${sources}.rowid`));
-  const audio = srcs.find((s) => s.kind === "file" && s.filePath) ?? null;
+  const audio = srcs.find((s) => (s.kind === "file" || s.kind === "youtube") && s.filePath) ?? null;
   return { song, sheet: sheet ?? null, sources: srcs, audio };
 }
 
