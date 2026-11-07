@@ -65,6 +65,23 @@ describe("pitch-shift worklet", () => {
     expect(Math.abs(f - expected) / expected).toBeLessThan(0.03);
   });
 
+  it("applies an initial pitch from processorOptions", () => {
+    const p = new (Processor as unknown as new (o: unknown) => ProcessorInstance)({
+      processorOptions: { semitones: 12 },
+    });
+    const out = new Float32Array(SR);
+    for (let b = 0; b < Math.floor(SR / 128); b++) {
+      const inL = new Float32Array(128);
+      for (let i = 0; i < 128; i++)
+        inL[i] = 0.5 * Math.sin((2 * Math.PI * 440 * (b * 128 + i)) / SR);
+      const outL = new Float32Array(128);
+      p.process([[inL, inL]], [[outL, new Float32Array(128)]]);
+      out.set(outL, b * 128);
+    }
+    const f = estimateFrequency(out, 0.4);
+    expect(Math.abs(f - 880) / 880).toBeLessThan(0.03);
+  });
+
   it("keeps duration (output keeps flowing, no tempo change)", () => {
     const out = run(5, 440, 2);
     // After priming, the last second should be continuously non-silent.

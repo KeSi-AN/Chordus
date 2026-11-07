@@ -25,8 +25,11 @@ class PitchShiftProcessor extends AudioWorkletProcessor {
   private interleaved = new Float32Array(BLOCK * 2);
   private out = new Float32Array(BLOCK * 2);
 
-  constructor() {
+  constructor(options?: { processorOptions?: { semitones?: number } }) {
     super();
+    // Initial pitch via processorOptions applies from the first block (port messages are async).
+    const initial = options?.processorOptions?.semitones;
+    if (typeof initial === "number") this.semitones = Math.max(-24, Math.min(24, initial));
     this.configure();
     this.port.onmessage = (e: MessageEvent<{ type: string; semitones?: number }>) => {
       const msg = e.data;

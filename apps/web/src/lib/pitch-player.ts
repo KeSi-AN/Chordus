@@ -46,6 +46,7 @@ export class PitchPlayer {
         numberOfInputs: 1,
         numberOfOutputs: 1,
         outputChannelCount: [2],
+        processorOptions: { semitones: this.semitones },
       });
       source.disconnect();
       source.connect(node).connect(ctx.destination);

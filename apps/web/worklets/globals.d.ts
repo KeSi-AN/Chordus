@@ -15,7 +15,9 @@ declare abstract class AudioWorkletProcessor {
 
 declare function registerProcessor(
   name: string,
-  processorCtor: new () => AudioWorkletProcessor,
+  processorCtor: new (options?: {
+    processorOptions?: Record<string, unknown>;
+  }) => AudioWorkletProcessor,
 ): void;
 
 // Minimal typings for the parts of soundtouchjs we use (the package ships no types).
