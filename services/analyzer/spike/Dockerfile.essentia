@@ -1,0 +1,9 @@
+# Runs the chord-detection spike with Essentia (Linux-only wheels) next to the librosa detector.
+#   docker build -f spike/Dockerfile.essentia -t chordus-spike .
+#   docker run --rm -v "$PWD/spike:/app/spike" chordus-spike --out spike/synthetic-essentia.md
+FROM python:3.12-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir essentia "librosa>=0.11" numpy scipy soundfile
+WORKDIR /app
+COPY analyzer ./analyzer
+ENTRYPOINT ["python", "-m", "analyzer.spike"]
