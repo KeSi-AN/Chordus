@@ -20,6 +20,8 @@ export interface Storage {
   /** Read the whole object or a byte range as a web stream. */
   read(key: string, range?: ByteRange): ReadableStream<Uint8Array>;
   delete(key: string): Promise<void>;
+  /** Delete everything under a key prefix (e.g. `audio/<songId>`), including analyzer stems. */
+  deletePrefix(prefix: string): Promise<void>;
 }
 
 export class LocalStorage implements Storage {
@@ -80,6 +82,11 @@ export class LocalStorage implements Storage {
 
   async delete(key: string): Promise<void> {
     await fsp.rm(this.resolve(key), { force: true });
+  }
+
+  async deletePrefix(prefix: string): Promise<void> {
+    const dir = this.resolve(prefix.replace(/\/+$/, ""));
+    await fsp.rm(dir, { recursive: true, force: true });
   }
 }
 

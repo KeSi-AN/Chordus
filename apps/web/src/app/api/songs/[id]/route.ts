@@ -27,11 +27,11 @@ export async function DELETE(_req: Request, ctx: RouteContext<"/api/songs/[id]">
   try {
     const { db, userId } = await getRequestContext();
     const { id } = await ctx.params;
-    const removed = await deleteSong(db, userId, id);
-    const storage = getStorage();
-    await Promise.all(
-      removed.filter((s) => s.filePath).map((s) => storage.delete(s.filePath!).catch(() => {})),
-    );
+    await deleteSong(db, userId, id);
+    // Uploads, YouTube audio and analyzer stems all live under audio/<songId>/.
+    await getStorage()
+      .deletePrefix(`audio/${id}`)
+      .catch(() => {});
     return new Response(null, { status: 204 });
   } catch (err) {
     return handleError(err);

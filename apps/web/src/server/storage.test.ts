@@ -32,6 +32,18 @@ describe("LocalStorage", () => {
     await expect(storage.delete("audio/a/missing.txt")).resolves.toBeUndefined();
   });
 
+  it("deletes a whole prefix", async () => {
+    await storage.put("audio/song1/a.mp3", new Uint8Array([1]));
+    await storage.put("audio/song1/x-vocals.wav", new Uint8Array([2]));
+    await storage.put("audio/song2/b.mp3", new Uint8Array([3]));
+    await storage.deletePrefix("audio/song1");
+    expect(await storage.stat("audio/song1/a.mp3")).toBeNull();
+    expect(await storage.stat("audio/song1/x-vocals.wav")).toBeNull();
+    expect(await storage.stat("audio/song2/b.mp3")).toEqual({ size: 1 });
+    await expect(storage.deletePrefix("audio/missing")).resolves.toBeUndefined();
+    await expect(storage.deletePrefix("../")).rejects.toThrow();
+  });
+
   it("rejects path traversal", async () => {
     await expect(storage.put("../evil.txt", new Uint8Array())).rejects.toThrow();
     await expect(storage.put("audio/../../evil.txt", new Uint8Array())).rejects.toThrow();
