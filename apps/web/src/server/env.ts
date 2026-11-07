@@ -1,13 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** Walk up from `start` until a directory containing pnpm-workspace.yaml is found. */
+/**
+ * Walk up from `start` until a directory containing pnpm-workspace.yaml is found.
+ * The turbopackIgnore hints keep Next's output tracing from pulling in the whole repo.
+ */
 export function findRepoRoot(start: string = process.cwd()): string {
-  let dir = path.resolve(start);
+  let dir = path.resolve(/*turbopackIgnore: true*/ start);
   for (;;) {
     if (fs.existsSync(path.join(dir, "pnpm-workspace.yaml"))) return dir;
     const parent = path.dirname(dir);
-    if (parent === dir) return path.resolve(start);
+    if (parent === dir) return path.resolve(/*turbopackIgnore: true*/ start);
     dir = parent;
   }
 }
