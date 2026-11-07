@@ -23,6 +23,8 @@ export interface ServerConfig {
   dataDir: string;
   /** Max upload size for audio files, in bytes. */
   maxUploadBytes: number;
+  /** Base URL of the Python analyzer service (health checks only; jobs go through the DB). */
+  analyzerUrl: string;
 }
 
 /** Resolve a `file:` URL with a relative path against the repo root, so cwd doesn't matter. */
@@ -42,5 +44,6 @@ export function getServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCon
     databaseAuthToken: env.DATABASE_AUTH_TOKEN || undefined,
     dataDir,
     maxUploadBytes: Number(env.MAX_UPLOAD_MB ?? 100) * 1024 * 1024,
+    analyzerUrl: (env.ANALYZER_URL ?? "http://127.0.0.1:8000").replace(/\/$/, ""),
   };
 }
