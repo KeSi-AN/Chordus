@@ -13,6 +13,7 @@ Put your test songs here (this folder is git-ignored except for this file):
 
   Chords can be plain (`G`, `Em`, `F#m7`) or MIREX style (`G:maj`, `E:min`). Only root and
   major/minor are scored.
+
 - `my-song.key` (optional): the key, e.g. `G` or `Em`.
 
 Then run from `services/analyzer`:

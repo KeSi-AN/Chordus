@@ -1,0 +1,12 @@
+{
+  "name": "@chordus/analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Python analyzer (uv). These scripts let pnpm run it alongside the web app.",
+  "scripts": {
+    "dev": "uv run chordus-analyzer serve",
+    "test": "uv run pytest -q",
+    "lint": "uv run ruff check analyzer tests && uv run ruff format --check analyzer tests",
+    "spike": "uv run python -m analyzer.spike"
+  }
+}

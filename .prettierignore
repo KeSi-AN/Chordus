@@ -6,3 +6,5 @@ data
 apps/web/drizzle/meta
 apps/web/public/worklets
 PROJECT_PLAN.md
+services/analyzer/.venv
+services/analyzer/spike/*.md
