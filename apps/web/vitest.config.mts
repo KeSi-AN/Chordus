@@ -7,7 +7,7 @@ export default defineProject({
   },
   test: {
     name: "web",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "worklets/**/*.test.ts"],
     environment: "node",
   },
 });

@@ -3,18 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "predev": "tsx scripts/db.ts setup",
+    "predev": "tsx scripts/db.ts setup && node scripts/build-worklets.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit && tsc --noEmit -p worklets",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db.ts migrate",
     "db:seed": "tsx scripts/db.ts seed",
     "db:reset": "tsx scripts/db.ts reset",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "prebuild": "node scripts/build-worklets.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

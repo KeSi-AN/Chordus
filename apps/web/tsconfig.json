@@ -32,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "public/worklets"]
+  "exclude": ["worklets", "node_modules", "public/worklets"]
 }
