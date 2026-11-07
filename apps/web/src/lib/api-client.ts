@@ -61,12 +61,21 @@ export type ClientEventType =
   | "capo_change"
   | "strum_change";
 
-/** Fire-and-forget event logging; failures never interrupt the UI. */
+const recent = new Map<string, number>();
+
+/**
+ * Fire-and-forget event logging; failures never interrupt the UI. Identical events within
+ * a second are dropped (e.g. effects double-running in React dev mode).
+ */
 export function logClientEvent(
   type: ClientEventType,
   songId: string | null,
   payload: Record<string, unknown> = {},
 ): void {
+  const dedupeKey = `${type}|${songId}|${JSON.stringify(payload)}`;
+  const now = Date.now();
+  if (now - (recent.get(dedupeKey) ?? 0) < 1000) return;
+  recent.set(dedupeKey, now);
   void fetch("/api/events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

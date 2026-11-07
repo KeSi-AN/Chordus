@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import Script from "next/script";
 import { Music2, Plus } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,10 +31,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body className="flex min-h-full flex-col bg-background text-foreground">
+        <Script id="theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <TooltipProvider delay={300}>
           <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur print:hidden">
             <div className="mx-auto flex h-12 max-w-6xl items-center gap-4 px-4">
