@@ -41,3 +41,10 @@ Thumbs.db
 __pycache__/
 .venv/
 *.pyc
+
+# analyzer
+services/analyzer/spike/data/
+services/analyzer/spike/songs/*
+!services/analyzer/spike/songs/README.md
+.pytest_cache/
+.ruff_cache/
