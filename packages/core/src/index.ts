@@ -8,3 +8,4 @@ export * from "./chords-over-words";
 export * from "./capo";
 export * from "./pitch";
 export * from "./suggest";
+export * from "./youtube";
