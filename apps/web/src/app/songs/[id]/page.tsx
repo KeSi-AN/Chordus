@@ -4,6 +4,7 @@ import { SongView } from "@/components/song/song-view";
 import { DEFAULT_USER_ID } from "@/server/constants";
 import { getDb } from "@/server/db/client";
 import { loadSongOr404 } from "@/server/pages";
+import { latestAnalysis } from "@/server/services/analysis";
 import { getPrefsView } from "@/server/services/prefs";
 import { listStrumPatterns } from "@/server/services/strum";
 
@@ -19,15 +20,21 @@ export default async function SongPage({ params }: PageProps<"/songs/[id]">) {
   const { id } = await params;
   const detail = await loadSongOr404(id);
   const db = await getDb();
-  const [prefs, patterns] = await Promise.all([
+  const [prefs, patterns, analysis] = await Promise.all([
     getPrefsView(db, DEFAULT_USER_ID, id),
     listStrumPatterns(db, DEFAULT_USER_ID),
+    latestAnalysis(db, id),
   ]);
   return (
     <SongView
+      // Remount when the analyzer delivers a new sheet or audio, so local state starts fresh.
+      key={`${detail.sheet?.id ?? "none"}:${detail.audio?.id ?? "none"}`}
       song={detail.song}
       chordpro={detail.sheet?.chordpro ?? ""}
+      sheetOrigin={detail.sheet?.origin ?? null}
       initialAudio={detail.audio}
+      hasYouTubeSource={detail.sources.some((s) => s.kind === "youtube" && s.youtubeVideoId)}
+      analysis={analysis}
       initialPrefs={prefs}
       initialPatterns={patterns}
     />

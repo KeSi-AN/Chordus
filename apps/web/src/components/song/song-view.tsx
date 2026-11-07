@@ -19,11 +19,14 @@ import { buttonVariants } from "@/components/ui/button";
 import { logClientEvent } from "@/lib/api-client";
 import { useStoredNumber } from "@/lib/use-stored-number";
 import { cn } from "@/lib/utils";
-import type { Song, Source, StrumPattern } from "@/server/db/schema";
+import type { SheetOrigin, Song, Source, StrumPattern } from "@/server/db/schema";
+import type { AnalysisView } from "@/server/services/analysis";
 import type { PrefsView } from "@/server/services/prefs";
+import { AnalysisPanel } from "./analysis-panel";
 import { AudioPanel } from "./audio-player";
 import { ChordDiagrams } from "./chord-diagrams";
 import { ConfirmPanel } from "./confirm-panel";
+import { DraftBanner } from "./draft-banner";
 import { SongToolbar } from "./song-toolbar";
 import { StrumPanel } from "./strum-panel";
 import { useAutoScroll } from "./use-auto-scroll";
@@ -41,13 +44,19 @@ function withKey(chordpro: string, key: string | null): string {
 export function SongView({
   song,
   chordpro,
+  sheetOrigin,
   initialAudio,
+  hasYouTubeSource,
+  analysis,
   initialPrefs,
   initialPatterns,
 }: {
   song: Song;
   chordpro: string;
+  sheetOrigin: SheetOrigin | null;
   initialAudio: Source | null;
+  hasYouTubeSource: boolean;
+  analysis: AnalysisView | null;
   initialPrefs: PrefsView;
   initialPatterns: StrumPattern[];
 }) {
@@ -123,8 +132,17 @@ export function SongView({
               {view.soundingKey}.
             </p>
           )}
+          {sheetOrigin === "detected" && <DraftBanner songId={song.id} chordpro={chordpro} />}
           <ChordDiagrams chords={view.shownChords} />
-          <SheetView sheet={view.parsed} fontSize={fontSize} />
+          {chordpro.trim() ? (
+            <SheetView sheet={view.parsed} fontSize={fontSize} />
+          ) : (
+            <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+              {analysis && (analysis.status === "queued" || analysis.status === "running")
+                ? "The chord sheet appears here when the analysis finishes."
+                : "No chord sheet yet. Detect chords from the audio, or paste a sheet via Edit."}
+            </div>
+          )}
         </div>
 
         <aside className="space-y-6 lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:self-start lg:overflow-y-auto">
@@ -134,6 +152,15 @@ export function SongView({
           <section className="rounded-xl border p-4">
             <AudioPanel songId={song.id} audio={audio} prefs={prefs} onAudioChange={setAudio} />
           </section>
+          {(analysis || audio || hasYouTubeSource) && (
+            <section className="rounded-xl border p-4">
+              <AnalysisPanel
+                songId={song.id}
+                initial={analysis}
+                canAnalyze={Boolean(audio) || hasYouTubeSource}
+              />
+            </section>
+          )}
           <section className="rounded-xl border p-4">
             <StrumPanel
               patterns={patterns}
