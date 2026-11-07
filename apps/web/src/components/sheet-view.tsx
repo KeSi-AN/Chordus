@@ -77,8 +77,13 @@ function LyricLine({ segments }: { segments: Segment[] }) {
             className={cn(
               "min-h-[1.3em] pr-[0.4em] font-semibold whitespace-pre text-primary",
               seg.chord === null && "select-none",
+              seg.uncertain &&
+                "underline decoration-amber-500 decoration-dotted decoration-2 underline-offset-4",
             )}
             data-chord={seg.chord ?? undefined}
+            title={
+              seg.uncertain ? "Low-confidence chord detected from audio. Check it." : undefined
+            }
           >
             {seg.chord ?? " "}
           </span>
