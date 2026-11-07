@@ -33,8 +33,11 @@ CUDA build of torch into the analyzer's environment; `ANALYZER_DEVICE=auto` pick
 
 ```bash
 cd services/analyzer
-uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu128
+uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu130
 ```
+
+CUDA 13 builds need a recent NVIDIA driver (580+); with an older driver use `whl/cu128`.
+Check it worked with `uv run python -c "import torch; print(torch.cuda.is_available())"`.
 
 (`uv sync` puts the CPU build back.) Or set `ANALYZER_MELODY=0` to skip the melody range.
 
