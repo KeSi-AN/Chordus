@@ -7,3 +7,4 @@ export * from "./chordpro";
 export * from "./chords-over-words";
 export * from "./capo";
 export * from "./pitch";
+export * from "./suggest";

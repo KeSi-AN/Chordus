@@ -69,7 +69,12 @@ describe("parseChordPro", () => {
   const sheet = parseChordPro(SONG);
 
   it("reads metadata", () => {
-    expect(sheet.meta).toMatchObject({ title: "Test Song", artist: "Someone", key: "G", time: "3/4" });
+    expect(sheet.meta).toMatchObject({
+      title: "Test Song",
+      artist: "Someone",
+      key: "G",
+      time: "3/4",
+    });
   });
 
   it("builds sections with labels", () => {

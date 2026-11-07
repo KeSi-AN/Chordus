@@ -104,7 +104,8 @@ export function parseLyricLine(line: string): Segment[] {
     last = m.index + m[0].length;
   }
   const rest = line.slice(last);
-  if (pendingChord !== null || rest.length > 0) segments.push({ chord: pendingChord, lyrics: rest });
+  if (pendingChord !== null || rest.length > 0)
+    segments.push({ chord: pendingChord, lyrics: rest });
   return segments;
 }
 
@@ -213,20 +214,25 @@ export function serializeChordPro(sheet: ParsedSheet): string {
   const out: string[] = [];
   const keys = [
     ...META_ORDER.filter((k) => sheet.meta[k] !== undefined),
-    ...Object.keys(sheet.meta).filter((k) => !META_ORDER.includes(k) && sheet.meta[k] !== undefined),
+    ...Object.keys(sheet.meta).filter(
+      (k) => !META_ORDER.includes(k) && sheet.meta[k] !== undefined,
+    ),
   ];
   for (const k of keys) out.push(`{${k}: ${sheet.meta[k]}}`);
   for (const section of sheet.sections) {
     if (out.length > 0) out.push("");
     if (section.isRepeat) {
-      out.push(section.label && section.label !== "Chorus" ? `{chorus: ${section.label}}` : "{chorus}");
+      out.push(
+        section.label && section.label !== "Chorus" ? `{chorus: ${section.label}}` : "{chorus}",
+      );
       continue;
     }
     if (section.kind === "none") {
       for (const l of section.lines) out.push(serializeLine(l));
       continue;
     }
-    const label = section.label && section.label !== defaultLabel(section.kind) ? `: ${section.label}` : "";
+    const label =
+      section.label && section.label !== defaultLabel(section.kind) ? `: ${section.label}` : "";
     out.push(`{start_of_${section.kind}${label}}`);
     for (const l of section.lines) out.push(serializeLine(l));
     out.push(`{end_of_${section.kind}}`);

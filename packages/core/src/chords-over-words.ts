@@ -54,7 +54,12 @@ export function isChordLine(line: string): boolean {
 }
 
 function sectionKind(label: string): string {
-  const word = label.toLowerCase().replace(/[^a-z]/g, " ").trim().split(/\s+/)[0] ?? "";
+  const word =
+    label
+      .toLowerCase()
+      .replace(/[^a-z]/g, " ")
+      .trim()
+      .split(/\s+/)[0] ?? "";
   if (word === "refrain") return "chorus";
   if (word === "pre" || word === "prechorus") return "prechorus";
   if (word === "post" || word === "postchorus") return "postchorus";

@@ -38,7 +38,7 @@ describe("transpose/audio linking", () => {
   it("maps audio shifts back to the same chords", () => {
     for (let a = -12; a <= 12; a++) {
       const t = transposeForAudioShift(a);
-      expect(((t - a) % 12 + 12) % 12).toBe(0);
+      expect((((t - a) % 12) + 12) % 12).toBe(0);
     }
   });
 });

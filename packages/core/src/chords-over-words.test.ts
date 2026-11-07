@@ -110,11 +110,7 @@ B|---0-----|
 
   it("puts inline 'Label: chords' on the section", () => {
     const outro = sheet.sections[3]!.lines[0]!;
-    expect(outro.type === "lyrics" && outro.segments.map((s) => s.chord)).toEqual([
-      "G",
-      "C",
-      "G",
-    ]);
+    expect(outro.type === "lyrics" && outro.segments.map((s) => s.chord)).toEqual(["G", "C", "G"]);
   });
 
   it("groups tab lines", () => {

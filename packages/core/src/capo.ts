@@ -97,7 +97,10 @@ export function capoOptions(input: CapoOptionsInput): CapoOption[] {
       shapeKey: shapeName,
       score: Math.round(score * 100) / 100,
       openRatio: openRatio === null ? null : Math.round(openRatio * 100) / 100,
-      reason: capo === 0 ? `No capo, ${shapeName} shapes${pct}` : `Capo ${capo}, ${shapeName} shapes${pct}`,
+      reason:
+        capo === 0
+          ? `No capo, ${shapeName} shapes${pct}`
+          : `Capo ${capo}, ${shapeName} shapes${pct}`,
     });
   }
   return options.sort((a, b) => b.score - a.score || a.capo - b.capo);
