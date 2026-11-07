@@ -11,15 +11,32 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and phase plan,
 
 - Node.js 22.12+
 - pnpm 11 (`corepack enable` picks up the version in `package.json`)
+- For the analyzer: [uv](https://docs.astral.sh/uv/) (it installs Python 3.13 and the
+  dependencies itself) and `ffmpeg` on your PATH (`winget install ffmpeg`)
 
 ## Getting started
 
 ```bash
 pnpm install
-pnpm dev          # migrates + seeds data/app.db on first run, then serves http://localhost:3000
+cd services/analyzer && uv sync && cd ../..   # first time only: Python deps (~1 GB, mostly torch)
+pnpm dev          # web app on http://localhost:3000 + analyzer on http://127.0.0.1:8000
 ```
 
-Optional: copy `.env.example` to `.env` to change the database URL or data folder.
+`pnpm dev:web` runs only the web app; `pnpm analyzer` runs only the analyzer. The first run
+migrates and seeds `data/app.db`. Optional: copy `.env.example` to `.env` to change settings.
+
+### Faster vocal separation on an NVIDIA GPU
+
+Demucs (vocal isolation, used for the melody range) runs on the CPU by default, at roughly
+song length or a bit more (~5 minutes for a 4-minute song). With an NVIDIA GPU, install the
+CUDA build of torch into the analyzer's environment; `ANALYZER_DEVICE=auto` picks it up:
+
+```bash
+cd services/analyzer
+uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu128
+```
+
+(`uv sync` puts the CPU build back.) Or set `ANALYZER_MELODY=0` to skip the melody range.
 
 ## Status
 
@@ -27,7 +44,7 @@ Optional: copy `.env.example` to `.env` to change the database URL or data folde
 | ----- | ------------------------------------------------------------------ | ------- |
 | 0     | Monorepo, Next.js, Drizzle + libSQL, migrations, seed, lint, tests | Done    |
 | 1     | Core loop: sheets, transpose, capo, strum, audio pitch, confirm    | Done    |
-| 2     | Analyzer (chords from audio + YouTube)                             | Not yet |
+| 2     | Analyzer (chords from audio + YouTube)                             | Done    |
 | 3     | Voice-fit learning                                                 | Not yet |
 | 4     | Browser extension                                                  | Not yet |
 
@@ -50,6 +67,22 @@ Optional: copy `.env.example` to `.env` to change the database URL or data folde
 Until Phase 3, suggestions come from simple fallbacks: your median confirmed shift for the same
 artist, then for the same vocalist type, then across all songs, else 0.
 
+## Chords from audio (Phase 2)
+
+1. **Add song → Audio file** or **YouTube link**. The song opens right away and shows the
+   analysis progress. YouTube audio is downloaded on this machine with `yt-dlp` (personal use).
+2. The analyzer detects tempo, meter, key and a chord per bar, and writes a **draft sheet**.
+   Low-confidence chords are underlined. The audio becomes playable (with pitch shift) as soon
+   as it's downloaded; the draft appears as soon as chords are done.
+3. Vocal isolation (Demucs) + pitch tracking then measure the **vocal melody range** (p10–p90),
+   which Phase 3 uses to fit songs to your voice.
+4. While the analyzed audio plays, the current bar is highlighted in the sheet with a
+   **Now / Next** chord strip (shown in capo shapes, compensated for the pitch shifter's delay).
+5. Fix chords via **Edit chords**, then **Mark as checked**. Songs with a pasted sheet can be
+   analyzed too (_Detect chords_); your sheet stays primary.
+
+How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/analyzer/spike/REPORT.md).
+
 ## Known limitations
 
 - Pitch shifting beyond about ±4 semitones sounds noticeably artificial (SoundTouch). The app
@@ -58,15 +91,24 @@ artist, then for the same vocalist type, then across all songs, else 0.
 - Edits are kept in the page until you confirm; reloading discards unconfirmed edits.
 - Chord diagrams cover common chord types; unusual extensions fall back to a simpler shape or
   are listed as "no diagram".
+- Detected chords are a **draft**: major/minor triads only (sevenths, sus and slash chords come
+  out as the nearest triad), one or two chords per bar, and dense mixes or fast changes need
+  manual fixes. Meter detection only distinguishes 3 vs 4 beats per bar.
+- Detected sheets have chords only. Paste lyrics in via Edit.
+- The melody range needs audible singing; instrumentals and karaoke backing tracks without a
+  guide vocal get no range.
+- YouTube titles are split into artist/title heuristically; check them after import.
 
 ## Scripts
 
 | Command            | What it does                                                          |
 | ------------------ | --------------------------------------------------------------------- |
-| `pnpm dev`         | Run the web app (applies pending migrations first)                    |
+| `pnpm dev`         | Run the web app and the analyzer (applies pending migrations first)   |
+| `pnpm dev:web`     | Run only the web app                                                  |
+| `pnpm analyzer`    | Run only the analyzer (API on :8000 + job worker)                     |
 | `pnpm build`       | Production build                                                      |
-| `pnpm test`        | Run all unit tests (Vitest, all workspaces)                           |
-| `pnpm lint`        | ESLint (root packages + Next.js app)                                  |
+| `pnpm test`        | All tests: Vitest (web + core) and pytest (analyzer)                  |
+| `pnpm lint`        | ESLint (root packages + Next.js app) and ruff (analyzer)              |
 | `pnpm typecheck`   | TypeScript in every workspace                                         |
 | `pnpm format`      | Prettier                                                              |
 | `pnpm db:migrate`  | Apply Drizzle migrations                                              |
@@ -84,6 +126,8 @@ apps/web
   worklets/         Pitch-shift AudioWorklet (bundled to public/worklets by esbuild)
   drizzle/          SQL migrations
 packages/core       Pure TypeScript music logic (keys, chords, ChordPro, capo, strum, suggestions)
+services/analyzer   Python worker (uv): yt-dlp, key/BPM/chords (librosa), Demucs + pYIN melody,
+                    FastAPI /health. Picks jobs from the DB `jobs` table.
 data/               Local SQLite DB and uploaded audio (git-ignored)
 ```
 
@@ -91,6 +135,7 @@ data/               Local SQLite DB and uploaded audio (git-ignored)
 
 - `soundtouchjs` (pitch shifting) is LGPL-2.1. It's used unmodified as a library.
 - `@tombatossals/chords-db` (chord voicings) is MIT.
+- Analyzer: librosa (ISC), Demucs (MIT), yt-dlp (Unlicense), FastAPI (MIT), torch (BSD).
 
 ## Content policy
 

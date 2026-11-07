@@ -9,12 +9,17 @@ review at the end of each phase.
 - `apps/web`: Next.js (App Router) + TypeScript + Tailwind. UI, API route handlers, Drizzle DB.
 - `packages/core`: pure TypeScript music logic (transpose, keys, capo, ChordPro, strumming,
   suggestions). No I/O. Fully unit tested.
-- Later phases: `apps/extension` (Chrome MV3), `services/analyzer` (Python FastAPI worker).
+- `services/analyzer`: Python (uv) worker + FastAPI health endpoint. Polls the `jobs` table,
+  writes `analyses`, sources and detected `chord_sheets`. Never changes the schema: migrations
+  live in `apps/web/drizzle`.
+- Later phases: `apps/extension` (Chrome MV3).
 
 ## Commands
 
-- `pnpm dev`: run the web app on http://localhost:3000
-- `pnpm test`: run all Vitest projects
+- `pnpm dev`: web app on http://localhost:3000 plus the analyzer on :8000 (`pnpm dev:web` /
+  `pnpm analyzer` for one of them)
+- Analyzer only: `cd services/analyzer && uv run pytest -q`, `uv run ruff check analyzer tests`
+- `pnpm test`: all Vitest projects and pytest
 - `pnpm lint` / `pnpm typecheck` / `pnpm format`
 - `pnpm db:migrate` / `pnpm db:seed` / `pnpm db:reset` / `pnpm db:generate` (after schema edits)
 
