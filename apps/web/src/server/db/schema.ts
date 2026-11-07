@@ -22,7 +22,9 @@ const id = () =>
 const createdAt = () =>
   integer("created_at", { mode: "timestamp_ms" })
     .notNull()
-    .default(sql`(unixepoch() * 1000)`);
+    .default(sql`(unixepoch() * 1000)`)
+    // Millisecond precision from the app; the DB default only has whole seconds.
+    .$defaultFn(() => new Date());
 
 const updatedAt = () =>
   integer("updated_at", { mode: "timestamp_ms" })
