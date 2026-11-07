@@ -58,6 +58,11 @@ function normArtist(a: string): string {
   return a.trim().toLowerCase();
 }
 
+/** Round a confidence to two decimals (0..1). */
+function conf(x: number): number {
+  return Math.round(Math.max(0, Math.min(1, x)) * 100) / 100;
+}
+
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
@@ -83,7 +88,7 @@ export function suggestTransposeFallback(input: TransposeFallbackInput): Suggest
     return {
       value,
       source: "artist_median",
-      confidence: Math.min(0.8, 0.35 + 0.1 * byArtist.length),
+      confidence: conf(Math.min(0.8, 0.35 + 0.1 * byArtist.length)),
       reason: `${formatSemitones(value)}: your usual shift for ${input.artist.trim()} (${plural(byArtist.length, "confirmed song")})`,
     };
   }
@@ -95,7 +100,7 @@ export function suggestTransposeFallback(input: TransposeFallbackInput): Suggest
       return {
         value,
         source: "vocalist_median",
-        confidence: Math.min(0.6, 0.25 + 0.05 * byVoice.length),
+        confidence: conf(Math.min(0.6, 0.25 + 0.05 * byVoice.length)),
         reason: `${formatSemitones(value)}: your usual shift for ${input.vocalistHint}-vocal songs (${plural(byVoice.length, "confirmed song")})`,
       };
     }
@@ -106,7 +111,7 @@ export function suggestTransposeFallback(input: TransposeFallbackInput): Suggest
     return {
       value,
       source: "global_median",
-      confidence: Math.min(0.5, 0.15 + 0.03 * others.length),
+      confidence: conf(Math.min(0.5, 0.15 + 0.03 * others.length)),
       reason: `${formatSemitones(value)}: your usual shift across ${plural(others.length, "confirmed song")}`,
     };
   }
@@ -146,7 +151,7 @@ export function suggestCapo(
   return {
     value: best.capo,
     source: "capo_ranking",
-    confidence: Math.min(0.9, 0.4 + (best.openRatio ?? 0.5) * 0.5),
+    confidence: conf(Math.min(0.9, 0.4 + (best.openRatio ?? 0.5) * 0.5)),
     reason: `${best.reason} (song sounds in ${formatKey(soundingKey)})`,
   };
 }

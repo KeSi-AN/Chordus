@@ -47,7 +47,7 @@ describe("suggestTransposeFallback", () => {
 
   it("prefers the same artist (case-insensitive, mod-12 aware)", () => {
     const s = suggestTransposeFallback({ artist: "ADELE", vocalistHint: "female", history });
-    expect(s).toMatchObject({ value: -3, source: "artist_median" });
+    expect(s).toMatchObject({ value: -3, source: "artist_median", confidence: 0.65 });
     expect(s.reason).toContain("3 confirmed songs");
   });
 
