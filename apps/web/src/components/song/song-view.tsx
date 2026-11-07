@@ -8,15 +8,17 @@ import {
   parseKey,
   sheetKey,
   transposeChordPro,
+  transposeChord,
   transposeKey,
   uniqueChords,
 } from "@chordus/core";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
-import { SheetView } from "@/components/sheet-view";
+import { chordTokenIndices, SheetView } from "@/components/sheet-view";
 import { buttonVariants } from "@/components/ui/button";
 import { logClientEvent } from "@/lib/api-client";
+import { activeTimelineIndex, heardTime } from "@/lib/timeline";
 import { useStoredNumber } from "@/lib/use-stored-number";
 import { cn } from "@/lib/utils";
 import type { SheetOrigin, Song, Source, StrumPattern } from "@/server/db/schema";
@@ -27,6 +29,7 @@ import { AudioPanel } from "./audio-player";
 import { ChordDiagrams } from "./chord-diagrams";
 import { ConfirmPanel } from "./confirm-panel";
 import { DraftBanner } from "./draft-banner";
+import { NowPlaying } from "./now-playing";
 import { SongToolbar } from "./song-toolbar";
 import { StrumPanel } from "./strum-panel";
 import { useAutoScroll } from "./use-auto-scroll";
@@ -72,6 +75,7 @@ export function SongView({
 
   const transpose = prefs.fields.transpose.value;
   const capo = prefs.fields.capo.value;
+  const [playTime, setPlayTime] = useState<number | null>(null);
 
   const view = useMemo(() => {
     const base = withKey(chordpro, song.originalKey);
@@ -91,6 +95,39 @@ export function SongView({
         : [],
     };
   }, [chordpro, song.originalKey, transpose, capo]);
+
+  // Synced chords: only when the timeline was computed from the audio that is playing.
+  const timeline =
+    analysis?.status === "done" && audio && analysis.sourceId === audio.id
+      ? (analysis.chordTimeline ?? null)
+      : null;
+  const tokenCount = useMemo(() => chordTokenIndices(view.parsed).count, [view.parsed]);
+  const sync = useMemo(() => {
+    if (!timeline || timeline.length === 0 || playTime === null) return null;
+    const idx = activeTimelineIndex(timeline, heardTime(playTime, prefs.fields.audioPitch.value));
+    const shape = (c: string) =>
+      c === "N" ? "N.C." : transposeChord(c, transpose - capo, view.shapeKey);
+    const current = idx === null ? null : timeline[idx]!;
+    const next =
+      idx === null
+        ? timeline.find((e) => e.start > playTime)
+        : timeline.slice(idx + 1).find((e) => e.chord !== current!.chord);
+    return {
+      // The sheet can follow along only if it still has one chord token per timeline entry.
+      sheetIndex: tokenCount === timeline.length ? idx : null,
+      current: current ? shape(current.chord) : null,
+      uncertain: current ? current.confidence < 0.55 : false,
+      next: next ? shape(next.chord) : null,
+    };
+  }, [
+    timeline,
+    playTime,
+    prefs.fields.audioPitch.value,
+    transpose,
+    capo,
+    view.shapeKey,
+    tokenCount,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -134,8 +171,16 @@ export function SongView({
           )}
           {sheetOrigin === "detected" && <DraftBanner songId={song.id} chordpro={chordpro} />}
           <ChordDiagrams chords={view.shownChords} />
+          {sync && (
+            <NowPlaying current={sync.current} next={sync.next} uncertain={sync.uncertain} />
+          )}
           {chordpro.trim() ? (
-            <SheetView sheet={view.parsed} fontSize={fontSize} />
+            <SheetView
+              sheet={view.parsed}
+              fontSize={fontSize}
+              activeChordIndex={sync?.sheetIndex ?? null}
+              followActive={!scroll.running}
+            />
           ) : (
             <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
               {analysis && (analysis.status === "queued" || analysis.status === "running")
@@ -150,7 +195,13 @@ export function SongView({
             <ConfirmPanel prefs={prefs} patterns={patterns} />
           </section>
           <section className="rounded-xl border p-4">
-            <AudioPanel songId={song.id} audio={audio} prefs={prefs} onAudioChange={setAudio} />
+            <AudioPanel
+              songId={song.id}
+              audio={audio}
+              prefs={prefs}
+              onAudioChange={setAudio}
+              onPlaybackTime={setPlayTime}
+            />
           </section>
           {(analysis || audio || hasYouTubeSource) && (
             <section className="rounded-xl border p-4">
