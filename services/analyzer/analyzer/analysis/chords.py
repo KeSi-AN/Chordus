@@ -63,8 +63,21 @@ def beat_sync_chroma(
     import librosa
 
     y_h = librosa.effects.harmonic(y, margin=3.0)
+    bins_per_octave = 36
+    cqt = np.abs(
+        librosa.cqt(
+            y_h,
+            sr=sr,
+            hop_length=hop_length,
+            fmin=librosa.note_to_hz("C2"),
+            n_bins=bins_per_octave * 6,
+            bins_per_octave=bins_per_octave,
+        )
+    )
+    # Log compression keeps a loud bass root from drowning out the third and fifth.
+    cqt = np.log1p(100.0 * cqt / (cqt.max() or 1.0))
     chroma = librosa.feature.chroma_cqt(
-        y=y_h, sr=sr, hop_length=hop_length, bins_per_octave=36, n_chroma=12
+        C=cqt, sr=sr, hop_length=hop_length, bins_per_octave=bins_per_octave, n_chroma=12
     )
     rms = librosa.feature.rms(y=y_h, hop_length=hop_length)[0]
     n = chroma.shape[1]
@@ -80,8 +93,9 @@ class LibrosaHmmDetector:
     name = "librosa-hmm"
 
     def __init__(
-        self, *, sharpness: float = 18.0, p_stay: float = 0.75, key_bonus: float = 0.08
+        self, *, sharpness: float = 18.0, p_stay: float = 0.55, key_bonus: float = 0.03
     ) -> None:
+        # Defaults are tuned on the synthetic spike set; see spike/REPORT.md.
         self.sharpness = sharpness
         self.p_stay = p_stay
         self.key_bonus = key_bonus
@@ -89,9 +103,19 @@ class LibrosaHmmDetector:
     def detect(
         self, y: np.ndarray, sr: int, beat_frames: np.ndarray, key: tuple[int, str] | None
     ) -> BeatChords:
+        chroma, energy, times = beat_sync_chroma(y, sr, beat_frames)
+        return self.decode(chroma, energy, times, key)
+
+    def decode(
+        self,
+        chroma: np.ndarray,
+        energy: np.ndarray,
+        times: np.ndarray,
+        key: tuple[int, str] | None,
+    ) -> BeatChords:
+        """Template matching + Viterbi on precomputed beat-synchronous chroma."""
         import librosa
 
-        chroma, energy, times = beat_sync_chroma(y, sr, beat_frames)
         vocab = chord_vocab()
         names = [n for n, _ in vocab]
         T = np.stack([t for _, t in vocab])  # (K, 12)
