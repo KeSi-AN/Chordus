@@ -216,7 +216,11 @@ function Player({
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
-        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onTimeUpdate={(e) => {
+          setTime(e.currentTarget.currentTime);
+          // Fallback when animation frames are paused (background tab).
+          onPlaybackTime?.(e.currentTarget.currentTime);
+        }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
         onSeeking={() => playerRef.current?.flush()}
         onSeeked={(e) => onPlaybackTime?.(e.currentTarget.currentTime)}
