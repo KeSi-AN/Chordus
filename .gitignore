@@ -1,0 +1,43 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated worklet bundles
+apps/web/public/worklets/
+
+# local data (db + uploaded audio)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# env
+.env
+.env.local
+.env.*.local
+
+# tooling
+coverage/
+.vitest/
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# python (analyzer, later phases)
+__pycache__/
+.venv/
+*.pyc
