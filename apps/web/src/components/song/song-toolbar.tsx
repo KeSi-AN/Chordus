@@ -1,7 +1,7 @@
 "use client";
 
 import { formatSemitones, type CapoOption } from "@chordus/core";
-import { ChevronsDown, Minus, Pause, Plus, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronsDown, Minus, Pause, Plus, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { PrefChip } from "@/components/pref-chip";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -65,17 +65,6 @@ export function SongToolbar({
           </Button>
         )}
         <PrefChip state={transpose.state} reason={transpose.reason} />
-        {transpose.state === "suggested" && transpose.source !== "default" && (
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            onClick={() => prefs.reject("transpose")}
-            title="Not right: log it and go back to the original key"
-            aria-label="Reject transpose suggestion"
-          >
-            <X />
-          </Button>
-        )}
       </div>
 
       <div className="flex items-center gap-1.5">
@@ -111,17 +100,6 @@ export function SongToolbar({
           <span className="text-xs text-muted-foreground">play {shapeKey} shapes</span>
         )}
         <PrefChip state={capo.state} reason={capo.reason} />
-        {capo.state === "suggested" && capo.value !== 0 && (
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            onClick={() => prefs.reject("capo")}
-            title="Not right: log it and remove the capo"
-            aria-label="Reject capo suggestion"
-          >
-            <X />
-          </Button>
-        )}
       </div>
 
       <div className="ml-auto flex items-center gap-1">
