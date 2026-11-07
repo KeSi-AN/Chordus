@@ -32,6 +32,7 @@ export function AnalysisPanel({
   const [starting, setStarting] = useState(false);
   const active = analysis?.status === "queued" || analysis?.status === "running";
   const lastStatus = useRef(analysis?.status);
+  const lastStage = useRef(analysis?.stage ?? null);
 
   // Poll while the job is active; refresh the page (new sheet, audio, key) once it finishes.
   useEffect(() => {
@@ -44,15 +45,19 @@ export function AnalysisPanel({
         );
         if (cancelled) return;
         setAnalysis(next);
-        if (lastStatus.current !== next.status && next.status === "done") router.refresh();
+        // Refresh the page at the moments new content exists: audio downloaded ("Decoding"),
+        // draft sheet saved (vocal isolation starts right after), and when the job finishes.
+        const prevStage = lastStage.current;
+        const entered = (prefix: string) =>
+          Boolean(next.stage?.startsWith(prefix)) && !prevStage?.startsWith(prefix);
         if (
-          lastStatus.current === "queued" &&
-          next.status === "running" &&
-          next.stage?.startsWith("Decoding")
+          (lastStatus.current !== next.status && next.status === "done") ||
+          entered("Decoding") ||
+          entered("Isolating")
         ) {
-          // Audio was just downloaded from YouTube: show the player without waiting.
           router.refresh();
         }
+        lastStage.current = next.stage;
         lastStatus.current = next.status;
       } catch {
         // Transient; try again next tick.
