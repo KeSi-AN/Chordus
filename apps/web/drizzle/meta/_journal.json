@@ -15,6 +15,13 @@
       "when": 1794076443758,
       "tag": "0001_songs_fts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794080512063,
+      "tag": "0002_analysis_progress",
+      "breakpoints": true
     }
   ]
 }

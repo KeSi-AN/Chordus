@@ -28,6 +28,8 @@ const updatedAt = () =>
   integer("updated_at", { mode: "timestamp_ms" })
     .notNull()
     .default(sql`(unixepoch() * 1000)`)
+    // Set in the app too: columns added by ALTER TABLE can only have a constant DB default.
+    .$defaultFn(() => new Date())
     .$onUpdateFn(() => new Date());
 
 export type VocalistHint = "male" | "female" | "unknown";
@@ -121,6 +123,10 @@ export const analyses = sqliteTable(
       .references(() => songs.id, { onDelete: "cascade" }),
     sourceId: text("source_id").references(() => sources.id, { onDelete: "set null" }),
     status: text("status").$type<AnalysisStatus>().notNull().default("queued"),
+    /** Human-readable pipeline stage ("Downloading", "Detecting chords", ...). */
+    stage: text("stage"),
+    /** 0..1 progress for the UI. */
+    progress: real("progress").notNull().default(0),
     error: text("error"),
     key: text("key"),
     keyConfidence: real("key_confidence"),
@@ -132,6 +138,7 @@ export const analyses = sqliteTable(
     melodyP90Midi: real("melody_p90_midi"),
     vocalStemPath: text("vocal_stem_path"),
     createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   (t) => [index("analyses_song_idx").on(t.songId)],
 );
@@ -227,7 +234,9 @@ export const jobs = sqliteTable(
     status: text("status").$type<JobStatus>().notNull().default("queued"),
     attempts: integer("attempts").notNull().default(0),
     lockedAt: integer("locked_at", { mode: "timestamp_ms" }),
+    error: text("error"),
     createdAt: createdAt(),
+    updatedAt: updatedAt(),
   },
   (t) => [index("jobs_status_idx").on(t.status, t.createdAt)],
 );
