@@ -1,0 +1,150 @@
+"use client";
+
+import {
+  capoOptions as rankCapos,
+  extractChords,
+  formatKey,
+  parseChordPro,
+  parseKey,
+  sheetKey,
+  transposeChordPro,
+  transposeKey,
+  uniqueChords,
+} from "@chordus/core";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
+import { SheetView } from "@/components/sheet-view";
+import { buttonVariants } from "@/components/ui/button";
+import { logClientEvent } from "@/lib/api-client";
+import { useStoredNumber } from "@/lib/use-stored-number";
+import { cn } from "@/lib/utils";
+import type { Song, Source, StrumPattern } from "@/server/db/schema";
+import type { PrefsView } from "@/server/services/prefs";
+import { AudioPanel } from "./audio-player";
+import { ChordDiagrams } from "./chord-diagrams";
+import { ConfirmPanel } from "./confirm-panel";
+import { SongToolbar } from "./song-toolbar";
+import { StrumPanel } from "./strum-panel";
+import { useAutoScroll } from "./use-auto-scroll";
+import { useSongPrefs } from "./use-song-prefs";
+
+const FONT_KEY = "sheetFontSize";
+const validFontSize = (n: number) => n >= 11 && n <= 32;
+
+/** Make sure the sheet declares the song's key, so transposition spells chords for it. */
+function withKey(chordpro: string, key: string | null): string {
+  if (!key || parseChordPro(chordpro).meta.key) return chordpro;
+  return `{key: ${key}}\n${chordpro}`;
+}
+
+export function SongView({
+  song,
+  chordpro,
+  initialAudio,
+  initialPrefs,
+  initialPatterns,
+}: {
+  song: Song;
+  chordpro: string;
+  initialAudio: Source | null;
+  initialPrefs: PrefsView;
+  initialPatterns: StrumPattern[];
+}) {
+  const prefs = useSongPrefs(song.id, initialPrefs);
+  const [audio, setAudio] = useState(initialAudio);
+  const [patterns, setPatterns] = useState(initialPatterns);
+  const [fontSize, changeFont] = useStoredNumber(FONT_KEY, 17, validFontSize);
+  const scroll = useAutoScroll(song.bpm, fontSize);
+
+  useEffect(() => {
+    logClientEvent("open_song", song.id);
+  }, [song.id]);
+
+  const transpose = prefs.fields.transpose.value;
+  const capo = prefs.fields.capo.value;
+
+  const view = useMemo(() => {
+    const base = withKey(chordpro, song.originalKey);
+    const original = song.originalKey ? parseKey(song.originalKey) : (sheetKey(base)?.key ?? null);
+    const sounding = original ? transposeKey(original, transpose) : null;
+    const shapes = original ? transposeKey(original, transpose - capo) : null;
+    const soundingSheet = transposeChordPro(base, transpose);
+    const shownSheet = transposeChordPro(base, transpose - capo);
+    return {
+      originalKey: original ? formatKey(original) : null,
+      soundingKey: sounding ? formatKey(sounding) : null,
+      shapeKey: shapes ? formatKey(shapes) : null,
+      parsed: parseChordPro(shownSheet),
+      shownChords: uniqueChords(shownSheet),
+      capoOptions: sounding
+        ? rankCapos({ key: sounding, chords: extractChords(soundingSheet) })
+        : [],
+    };
+  }, [chordpro, song.originalKey, transpose, capo]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">{song.title}</h1>
+          <p className="text-muted-foreground">
+            {song.artist || "Unknown artist"}
+            <span className="ml-2 text-xs">
+              {song.timeSignature}
+              {song.bpm ? ` · ${Math.round(song.bpm)} BPM` : ""}
+            </span>
+          </p>
+        </div>
+        <Link
+          href={`/songs/${song.id}/edit`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+        >
+          <Pencil /> Edit
+        </Link>
+      </div>
+
+      <SongToolbar
+        prefs={prefs}
+        originalKey={view.originalKey}
+        soundingKey={view.soundingKey}
+        shapeKey={view.shapeKey}
+        capoOptions={view.capoOptions}
+        fontSize={fontSize}
+        onFontSize={changeFont}
+        scroll={scroll}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-6">
+          {capo > 0 && view.shapeKey && (
+            <p className="text-sm text-muted-foreground">
+              Capo {capo}: chords below are {view.shapeKey} shapes; the song sounds in{" "}
+              {view.soundingKey}.
+            </p>
+          )}
+          <ChordDiagrams chords={view.shownChords} />
+          <SheetView sheet={view.parsed} fontSize={fontSize} />
+        </div>
+
+        <aside className="space-y-6 lg:sticky lg:top-16 lg:max-h-[calc(100vh-5rem)] lg:self-start lg:overflow-y-auto">
+          <section className="rounded-xl border p-4">
+            <ConfirmPanel prefs={prefs} patterns={patterns} />
+          </section>
+          <section className="rounded-xl border p-4">
+            <AudioPanel songId={song.id} audio={audio} prefs={prefs} onAudioChange={setAudio} />
+          </section>
+          <section className="rounded-xl border p-4">
+            <StrumPanel
+              patterns={patterns}
+              timeSignature={song.timeSignature}
+              bpm={song.bpm}
+              prefs={prefs}
+              onPatternCreated={(p) => setPatterns((ps) => [...ps, p])}
+            />
+          </section>
+        </aside>
+      </div>
+    </div>
+  );
+}
