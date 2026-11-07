@@ -51,7 +51,7 @@ export class LocalStorage implements Storage {
         const { done, value } = await reader.read();
         if (done) break;
         size += value.byteLength;
-        if (!out.write(value)) await new Promise((r) => out.once("drain", r));
+        if (!out.write(value)) await new Promise<void>((r) => out.once("drain", () => r()));
       }
     } finally {
       await new Promise<void>((resolve, reject) =>
