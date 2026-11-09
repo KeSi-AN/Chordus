@@ -61,8 +61,8 @@ function useMeta() {
 }
 
 const ANALYSIS_NOTE =
-  "The analyzer detects key, tempo and chords per bar (a draft to check by ear) and measures " +
-  "the vocal range. It usually takes 1–3 minutes on this machine.";
+  "The analyzer detects the key, tempo, chords and lyrics (a draft to check by ear) and measures " +
+  "the vocal range. Chords are ready in under a minute; lyrics take a few minutes more.";
 
 export function YouTubeImportForm() {
   const router = useRouter();

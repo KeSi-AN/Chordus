@@ -32,7 +32,7 @@ export function DraftBanner({ songId, chordpro }: { songId: string; chordpro: st
   return (
     <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
       <p>
-        <span className="font-medium">Draft chords detected from audio.</span>{" "}
+        <span className="font-medium">Draft detected from audio.</span>{" "}
         {uncertain > 0 ? (
           <>
             {uncertain} low-confidence {uncertain === 1 ? "chord is" : "chords are"}{" "}

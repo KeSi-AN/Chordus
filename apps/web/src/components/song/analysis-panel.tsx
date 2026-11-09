@@ -46,14 +46,15 @@ export function AnalysisPanel({
         if (cancelled) return;
         setAnalysis(next);
         // Refresh the page at the moments new content exists: audio downloaded ("Decoding"),
-        // draft sheet saved (vocal isolation starts right after), and when the job finishes.
+        // chords-only draft saved (melody tracking starts right after), and when the job finishes.
         const prevStage = lastStage.current;
         const entered = (prefix: string) =>
           Boolean(next.stage?.startsWith(prefix)) && !prevStage?.startsWith(prefix);
         if (
           (lastStatus.current !== next.status && next.status === "done") ||
           entered("Decoding") ||
-          entered("Isolating")
+          entered("Tracking") ||
+          entered("Transcribing")
         ) {
           router.refresh();
         }
@@ -121,7 +122,7 @@ export function AnalysisPanel({
       {!analysis && (
         <div className="space-y-2 text-sm">
           <p className="text-muted-foreground">
-            Detect the key, tempo, chords and vocal range from this song&apos;s audio.
+            Detect the key, tempo, chords, lyrics and vocal range from this song&apos;s audio.
           </p>
           <Button size="sm" variant="outline" onClick={() => void start()} disabled={starting}>
             {starting ? <Loader2 className="animate-spin" /> : <AudioWaveform />}
