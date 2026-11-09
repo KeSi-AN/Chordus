@@ -25,21 +25,15 @@ pnpm dev          # web app on http://localhost:3000 + analyzer on http://127.0.
 `pnpm dev:web` runs only the web app; `pnpm analyzer` runs only the analyzer. The first run
 migrates and seeds `data/app.db`. Optional: copy `.env.example` to `.env` to change settings.
 
-### Faster vocal separation on an NVIDIA GPU
+### GPU
 
-Demucs (vocal isolation, used for the melody range) runs on the CPU by default, at roughly
-song length or a bit more (~5 minutes for a 4-minute song). With an NVIDIA GPU, install the
-CUDA build of torch into the analyzer's environment; `ANALYZER_DEVICE=auto` picks it up:
+On Windows the analyzer installs the CUDA 12.8 build of torch, so Demucs and Whisper use an
+NVIDIA GPU automatically (`ANALYZER_DEVICE=auto`) and fall back to the CPU otherwise. Check with:
 
 ```bash
 cd services/analyzer
-uv pip install --reinstall torch --index-url https://download.pytorch.org/whl/cu130
+uv run python -c "import torch; print(torch.cuda.is_available())"
 ```
-
-CUDA 13 builds need a recent NVIDIA driver (580+); with an older driver use `whl/cu128`.
-Check it worked with `uv run python -c "import torch; print(torch.cuda.is_available())"`.
-
-(`uv sync` puts the CPU build back.) Or set `ANALYZER_MELODY=0` to skip the melody range.
 
 ## Status
 
