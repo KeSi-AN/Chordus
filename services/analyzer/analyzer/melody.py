@@ -35,15 +35,34 @@ def pick_device(pref: str) -> str:
         return "cpu"
 
 
-def separate_vocals(
+@dataclass
+class StemPaths:
+    vocals: Path
+    drums: Path
+    bass: Path
+    other: Path
+
+
+def free_gpu() -> None:
+    """Return GPU memory between steps (Demucs and Whisper don't both fit on a 4 GB card)."""
+    import gc
+
+    import torch
+
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
+def separate_stems(
     wav_path: Path,
-    out_path: Path,
+    out_dir: Path,
     *,
     model: str = "htdemucs",
     device: str = "auto",
     progress: Callable[[float], None] | None = None,
-) -> Path:
-    """Write the isolated vocal stem of `wav_path` to `out_path` (44.1 kHz WAV)."""
+) -> StemPaths:
+    """Split a 44.1 kHz WAV into vocals, drums, bass and other. Falls back to CPU on GPU OOM."""
     import soundfile as sf
     import torch
     from demucs.api import Separator
@@ -55,16 +74,28 @@ def separate_vocals(
             ]
             progress(min(1.0, float(done)))
 
-    sep = Separator(model=model, device=pick_device(device), callback=on_progress)
     audio, sr = sf.read(str(wav_path), dtype="float32", always_2d=True)
-    if sr != sep.samplerate:
-        raise ValueError(f"Expected {sep.samplerate} Hz audio for Demucs, got {sr}")
     mix = torch.from_numpy(audio.T.copy())
     if mix.shape[0] == 1:
         mix = mix.repeat(2, 1)
-    _, stems = sep.separate_tensor(mix, sr)
-    vocals = stems["vocals"].mean(dim=0).cpu().numpy()
-    return write_wav(out_path, vocals, sr)
+
+    resolved = pick_device(device)
+    try:
+        sep = Separator(model=model, device=resolved, callback=on_progress)
+        _, stems = sep.separate_tensor(mix, sr)
+    except torch.cuda.OutOfMemoryError:
+        free_gpu()
+        sep = Separator(model=model, device="cpu", callback=on_progress)
+        _, stems = sep.separate_tensor(mix, sr)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths = {}
+    for name in ("vocals", "drums", "bass", "other"):
+        mono = stems[name].mean(dim=0).cpu().numpy()
+        paths[name] = write_wav(out_dir / f"{name}.wav", mono, sr)
+    del sep, stems
+    free_gpu()
+    return StemPaths(**paths)
 
 
 def melody_range_from_f0(

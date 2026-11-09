@@ -39,6 +39,8 @@ class Config:
     device: str
     demucs_model: str
     enable_melody: bool
+    enable_lyrics: bool = True
+    whisper_model: str = "medium"
 
     @property
     def sqlite_path(self) -> Path:
@@ -64,4 +66,6 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         device=env.get("ANALYZER_DEVICE") or "auto",
         demucs_model=env.get("DEMUCS_MODEL") or "htdemucs",
         enable_melody=(env.get("ANALYZER_MELODY") or "1") not in ("0", "false", "no"),
+        enable_lyrics=(env.get("ANALYZER_LYRICS") or "1") not in ("0", "false", "no"),
+        whisper_model=env.get("WHISPER_MODEL") or "medium",
     )

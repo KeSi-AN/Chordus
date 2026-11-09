@@ -58,10 +58,10 @@ def main(argv: list[str] | None = None) -> None:
                 "bars": [t.as_json() for t in h.bars],
             }
             if args.melody:
-                from .melody import separate_vocals, track_melody
+                from .melody import separate_stems, track_melody
 
-                vocals = separate_vocals(wav, Path(tmp) / "vocals.wav", device=cfg.device)
-                rng = track_melody(vocals)
+                stems = separate_stems(wav, Path(tmp) / "stems", device=cfg.device)
+                rng = track_melody(stems.vocals)
                 result["melody"] = rng.__dict__ if rng else None
             print(json.dumps(result, indent=2))
             print(

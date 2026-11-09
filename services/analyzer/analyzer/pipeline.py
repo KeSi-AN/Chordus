@@ -1,4 +1,4 @@
-"""One analysis job: fetch audio → harmony → draft sheet → vocal melody range."""
+"""One analysis job: fetch audio → stems → chords → melody range → timed lyrics → draft sheet."""
 
 from __future__ import annotations
 
@@ -9,12 +9,15 @@ from collections.abc import Callable
 from pathlib import Path
 
 from . import db as dbm
+from .aligned_sheet import build_aligned_sheet
 from .analysis import analyze_harmony
 from .analysis.chords import ChordDetector
+from .analysis.chords_stems import StemChordDetector
 from .audio import load_mono, to_wav
 from .config import Config
 from .draft import build_draft
-from .melody import separate_vocals, track_melody
+from .lyrics import Transcript, transcribe
+from .melody import StemPaths, separate_stems, track_melody
 from .storage import Storage
 from .youtube import Extractor, YtDlpExtractor
 
@@ -44,7 +47,8 @@ def run_analysis(
     *,
     extractor: Extractor | None = None,
     detector: ChordDetector | None = None,
-    separate: Callable[..., Path] = separate_vocals,
+    separate: Callable[..., StemPaths] = separate_stems,
+    transcriber: Callable[..., Transcript | None] = transcribe,
 ) -> None:
     analysis_id = payload["analysisId"]
     song_id = payload["songId"]
@@ -84,21 +88,46 @@ def run_analysis(
         else:
             raise JobError("This source has no audio to analyze")
 
-        # 2. Harmony.
-        progress("Decoding audio", 0.15)
+        # 2. Stems (best-effort: without them chords use the full mix and there are no lyrics).
+        progress("Decoding audio", 0.1)
         wav44 = to_wav(audio_path, tmp / "mix.wav", sr=44100)
         y, sr = load_mono(wav44, sr=22050)
         if len(y) < sr * 5:
             raise JobError("The audio is shorter than 5 seconds")
-        harmony = analyze_harmony(y, sr, detector, progress=lambda s, f: progress(s, 0.2 + 0.3 * f))
-        timeline = [t.as_json() for t in harmony.bars]
-        dbm.update_analysis(
-            conn,
-            analysis_id,
-            key=harmony.key.key,
-            key_confidence=harmony.key.confidence,
-            bpm=harmony.bpm,
-            chord_timeline=timeline,
+        notes: list[str] = []
+        stems = None
+        if cfg.enable_melody:
+            try:
+                progress("Separating vocals and instruments", 0.12)
+                stems = separate(
+                    wav44,
+                    tmp / "stems",
+                    model=cfg.demucs_model,
+                    device=cfg.device,
+                    progress=lambda f: progress(
+                        "Separating vocals and instruments", 0.12 + 0.2 * f
+                    ),
+                )
+            except Exception as exc:  # noqa: BLE001 - the mix still gives usable chords
+                log.exception("Stem separation failed")
+                notes.append(f"stem separation failed: {str(exc)[:100]}")
+
+        # 3. Harmony, from the instrumental stems when we have them.
+        harmonic = None
+        chord_detector = detector
+        if stems is not None:
+            other, _ = load_mono(stems.other, sr=sr)
+            bass, _ = load_mono(stems.bass, sr=sr)
+            n = min(len(other), len(bass))
+            other, bass = other[:n], bass[:n]
+            harmonic = other + 0.5 * bass
+            chord_detector = detector or StemChordDetector(harmonic, bass)
+        harmony = analyze_harmony(
+            y,
+            sr,
+            chord_detector,
+            progress=lambda s, f: progress(s, 0.32 + 0.18 * f),
+            key_audio=harmonic,
         )
         dbm.update_song(
             conn,
@@ -109,34 +138,33 @@ def run_analysis(
             duration_sec=harmony.duration,
         )
         song = dbm.get_row(conn, "songs", song_id)
-        draft = build_draft(
-            harmony.bars,
-            title=song["title"] if song else None,
-            artist=(song["artist"] or None) if song else None,
+        meta = {
+            "title": song["title"] if song else None,
+            "artist": (song["artist"] or None) if song else None,
+            "key": harmony.key.key,
+            "bpm": harmony.bpm,
+            "time_signature": harmony.time_signature,
+        }
+        # A chords-only draft right away; the lyric version replaces it below.
+        dbm.update_analysis(
+            conn,
+            analysis_id,
             key=harmony.key.key,
+            key_confidence=harmony.key.confidence,
             bpm=harmony.bpm,
-            time_signature=harmony.time_signature,
+            chord_timeline=[t.as_json() for t in harmony.bars],
         )
-        dbm.save_detected_sheet(conn, song_id, draft)
+        dbm.save_detected_sheet(conn, song_id, build_draft(harmony.bars, **meta))
 
-        # 3. Vocal melody range (optional and non-fatal: chords are still useful without it).
+        # 4. Vocal melody range (best-effort).
         melody_fields: dict = {}
-        stage_note = "Done"
-        if cfg.enable_melody:
+        if stems is not None:
             try:
-                progress("Isolating vocals (Demucs)", 0.55)
-                vocals = separate(
-                    wav44,
-                    tmp / "vocals.wav",
-                    model=cfg.demucs_model,
-                    device=cfg.device,
-                    progress=lambda f: progress("Isolating vocals (Demucs)", 0.55 + 0.35 * f),
-                )
+                progress("Tracking the vocal melody", 0.52)
                 stem_key = f"audio/{song_id}/{analysis_id}-vocals.wav"
-                storage.put_file(stem_key, vocals)
-                progress("Tracking the vocal melody", 0.92)
-                rng = track_melody(vocals)
+                storage.put_file(stem_key, stems.vocals)
                 melody_fields["vocal_stem_path"] = stem_key
+                rng = track_melody(stems.vocals)
                 if rng:
                     melody_fields.update(
                         melody_low_midi=rng.low,
@@ -145,17 +173,35 @@ def run_analysis(
                         melody_p90_midi=rng.p90,
                     )
                 else:
-                    stage_note = "Done (not enough singing found for a melody range)"
-            except Exception as exc:  # noqa: BLE001 - melody is best-effort
+                    notes.append("not enough singing found for a melody range")
+            except Exception as exc:  # noqa: BLE001
                 log.exception("Melody analysis failed")
-                stage_note = f"Done (melody range failed: {str(exc)[:120]})"
+                notes.append(f"melody range failed: {str(exc)[:100]}")
 
+        # 5. Lyrics, with each chord placed on the word being sung (best-effort).
+        if stems is not None and cfg.enable_lyrics:
+            try:
+                progress("Transcribing lyrics (Whisper)", 0.6)
+                transcript = transcriber(
+                    stems.vocals, model_name=cfg.whisper_model, device=cfg.device
+                )
+                if transcript and transcript.lines:
+                    aligned = build_aligned_sheet(
+                        harmony.spans,
+                        transcript.lines,
+                        harmony.bars,
+                        duration=harmony.duration,
+                        **meta,
+                    )
+                    dbm.save_detected_sheet(conn, song_id, aligned.chordpro)
+                    melody_fields["chord_timeline"] = [t.as_json() for t in aligned.timeline]
+                else:
+                    notes.append("no lyrics could be transcribed")
+            except Exception as exc:  # noqa: BLE001 - the chords-only draft is still there
+                log.exception("Lyrics transcription failed")
+                notes.append(f"lyrics failed: {str(exc)[:100]}")
+
+        stage = f"Done ({'; '.join(notes)})" if notes else "Done"
         dbm.update_analysis(
-            conn,
-            analysis_id,
-            status="done",
-            stage=stage_note,
-            progress=1.0,
-            error=None,
-            **melody_fields,
+            conn, analysis_id, status="done", stage=stage, progress=1.0, error=None, **melody_fields
         )

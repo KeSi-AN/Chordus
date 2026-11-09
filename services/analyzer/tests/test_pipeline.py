@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 from analyzer import db as dbm
 from analyzer.audio import write_wav
 from analyzer.config import Config
+from analyzer.lyrics import LyricLine, Transcript, Word
+from analyzer.melody import StemPaths
 from analyzer.server import create_app
 from analyzer.synth import render_song
 from analyzer.worker import Worker
@@ -35,14 +37,20 @@ class FakeExtractor:
         return ExtractResult(dst, "Real Song", "Real Artist", 30.0, "wav")
 
 
-def fake_separate(wav: Path, out: Path, **kwargs) -> Path:
-    """Stand-in for Demucs: a steady 'voice' between A3 and E4."""
+def fake_separate(wav: Path, out: Path, **kwargs) -> StemPaths:
+    """Stand-in for Demucs: a steady 'voice' between A3 and E4, plus the song as other/bass."""
     sr = 16000
     t = np.arange(sr * 12) / sr
     f = np.where(t < 6, 220.0, 329.63)
     y = 0.3 * np.sin(2 * np.pi * np.cumsum(f) / sr)
     kwargs.get("progress", lambda _f: None)(1.0)
-    return write_wav(out, y.astype(np.float32), sr)
+    vocals = write_wav(out / "vocals.wav", y.astype(np.float32), sr)
+    return StemPaths(vocals=vocals, drums=wav, bass=wav, other=wav)
+
+
+def fake_transcribe(_vocals: Path, **_kwargs) -> Transcript:
+    words = [Word(5 + i * 2.4, 5 + i * 2.4 + 2, f"word{i}") for i in range(6)]
+    return Transcript("en", [LyricLine(words[:3]), LyricLine(words[3:])])
 
 
 def cfg_for(tmp_path: Path, melody: bool) -> Config:
@@ -64,6 +72,7 @@ def test_youtube_job_end_to_end(db, tmp_path, song_wav):
         cfg_for(tmp_path, melody=True),
         extractor=FakeExtractor(song_wav),
         separate=fake_separate,
+        transcriber=fake_transcribe,
     )
     assert worker.run_once() is True
     assert worker.run_once() is False
@@ -93,10 +102,13 @@ def test_youtube_job_end_to_end(db, tmp_path, song_wav):
     assert abs(song["bpm"] - 100) < 4
 
     sheet = db.execute(
-        "SELECT chordpro, origin, is_primary FROM chord_sheets WHERE song_id = ?", (ids["song"],)
+        "SELECT chordpro, origin, is_primary FROM chord_sheets "
+        "WHERE song_id = ? AND is_primary = 1",
+        (ids["song"],),
     ).fetchone()
     assert sheet["origin"] == "detected" and sheet["is_primary"] == 1
     assert "{title: Real Song}" in sheet["chordpro"]
+    assert "word0" in sheet["chordpro"] and "word5" in sheet["chordpro"]
     tokens = sheet["chordpro"].count("[")
     assert tokens == len(timeline)
 
@@ -112,8 +124,29 @@ def test_melody_failure_is_not_fatal(db, tmp_path, song_wav):
     ).run_once()
     a = dbm.get_row(db, "analyses", ids["analysis"])
     assert a["status"] == "done"
-    assert "melody range failed" in a["stage"]
+    assert "stem separation failed" in a["stage"]
     assert a["melody_p10_midi"] is None
+    assert json.loads(a["chord_timeline"])  # chords still came from the mix
+
+
+def test_lyrics_failure_keeps_the_chord_draft(db, tmp_path, song_wav):
+    ids = make_song(db)
+
+    def broken(*_a, **_k):
+        raise RuntimeError("whisper exploded")
+
+    Worker(
+        cfg_for(tmp_path, melody=True),
+        extractor=FakeExtractor(song_wav),
+        separate=fake_separate,
+        transcriber=broken,
+    ).run_once()
+    a = dbm.get_row(db, "analyses", ids["analysis"])
+    assert a["status"] == "done" and "lyrics failed" in a["stage"]
+    sheet = db.execute(
+        "SELECT chordpro FROM chord_sheets WHERE song_id = ? AND is_primary = 1", (ids["song"],)
+    ).fetchone()
+    assert sheet["chordpro"].count("[") == len(json.loads(a["chord_timeline"]))
 
 
 def test_failed_job_records_error(db, tmp_path):
