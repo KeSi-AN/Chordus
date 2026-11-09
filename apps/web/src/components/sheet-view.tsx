@@ -108,6 +108,9 @@ function Line({
   }
 }
 
+/** Urdu, Arabic and Hebrew lyrics read right to left. */
+const RTL_RE = /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]/;
+
 function LyricLine({
   segments,
   indices,
@@ -119,15 +122,16 @@ function LyricLine({
 }) {
   const hasChords = segments.some((s) => s.chord !== null);
   const hasLyrics = segments.some((s) => s.lyrics.trim() !== "");
+  const dir = segments.some((s) => RTL_RE.test(s.lyrics)) ? "rtl" : undefined;
   if (!hasChords) {
     return (
-      <p className="leading-relaxed whitespace-pre-wrap">
+      <p dir={dir} className="leading-relaxed whitespace-pre-wrap">
         {segments.map((s) => s.lyrics).join("")}
       </p>
     );
   }
   return (
-    <div className="flex flex-wrap items-end leading-tight">
+    <div dir={dir} className="flex flex-wrap items-end leading-tight">
       {segments.map((seg, i) => {
         const index = indices[i] ?? -1;
         const active = index >= 0 && index === activeIndex;
