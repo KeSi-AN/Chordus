@@ -68,14 +68,16 @@ artist, then for the same vocalist type, then across all songs, else 0.
 
 1. **Add song → Audio file** or **YouTube link**. The song opens right away and shows the
    analysis progress. YouTube audio is downloaded on this machine with `yt-dlp` (personal use).
-2. The analyzer detects tempo, meter, key and a chord per bar, and writes a **draft sheet**.
-   Low-confidence chords are underlined. The audio becomes playable (with pitch shift) as soon
-   as it's downloaded; the draft appears as soon as chords are done.
-3. Vocal isolation (Demucs) + pitch tracking then measure the **vocal melody range** (p10–p90),
-   which Phase 3 uses to fit songs to your voice.
-4. While the analyzed audio plays, the current bar is highlighted in the sheet with a
-   **Now / Next** chord strip (shown in capo shapes, compensated for the pitch shifter's delay).
-5. Fix chords via **Edit chords**, then **Mark as checked**. Songs with a pasted sheet can be
+2. The analyzer separates the audio into stems (Demucs), then detects tempo, meter, key and
+   chords from the instrumental and bass stems. A chords-only **draft sheet** appears first.
+3. Whisper transcribes the vocal stem with a timestamp per word, and the draft is replaced by a
+   sheet with **lyrics and each chord placed on the word being sung**. Intros, solos and outros
+   become bar lines. Low-confidence chords are underlined.
+4. The vocal stem also gives the **vocal melody range** (p10-p90), which Phase 3 uses to fit
+   songs to your voice.
+5. While the analyzed audio plays, the current chord is highlighted in the sheet with a
+   **Now / Next** strip (shown in capo shapes, compensated for the pitch shifter's delay).
+6. Fix anything via **Edit chords**, then **Mark as checked**. Songs with a pasted sheet can be
    analyzed too (_Detect chords_); your sheet stays primary.
 
 How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/analyzer/spike/REPORT.md).
@@ -88,10 +90,12 @@ How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/
 - Edits are kept in the page until you confirm; reloading discards unconfirmed edits.
 - Chord diagrams cover common chord types; unusual extensions fall back to a simpler shape or
   are listed as "no diagram".
-- Detected chords are a **draft**: major/minor triads only (sevenths, sus and slash chords come
-  out as the nearest triad), one or two chords per bar, and dense mixes or fast changes need
-  manual fixes. Meter detection only distinguishes 3 vs 4 beats per bar.
-- Detected sheets have chords only. Paste lyrics in via Edit.
+- Detected chords are a **draft**: major, minor, 7, maj7 and m7 only (sus, dim and slash chords
+  come out as the nearest of those), and dense mixes or fast changes need manual fixes. Meter
+  detection only distinguishes 3 vs 4 beats per bar.
+- Transcribed lyrics are a **draft** too: Whisper mishears sung words, misses some lines, and is
+  noticeably weaker on Hindi/Urdu than English. Urdu comes out in Urdu script. A song's lyrics
+  take a few minutes on a 4 GB GPU.
 - The melody range needs audible singing. Instrumentals and karaoke backing tracks without a
   guide vocal get either no range or a misleading one (Demucs can pass lead instruments
   through as "vocals"), so prefer a version with the original vocal for the range.

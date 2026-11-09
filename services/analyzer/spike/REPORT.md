@@ -44,6 +44,16 @@ The CQT was dominated by the bass root, so the third and fifth barely registered
 compressing the CQT and loosening the HMM's stay probability fixed it (57% → 96%) without
 hurting the other songs.
 
+## Update: stem-based detector (now the default)
+
+Real recordings exposed what the synthetic set couldn't: vocals and drums pull the chroma off
+the chords. `StemChordDetector` (`analysis/chords_stems.py`) listens to the Demucs "other" stem
+for chord colour and the bass stem for the root, corrects tuning, and adds 7, maj7 and m7 chords
+with a preference for simple, in-key chords. It scores 98% at beat resolution on the synthetic
+set (triad level). On real songs it was only compared by ear against known progressions, since no
+labelled real songs exist yet: "Leave the Door Open" went from scattered triads to a stable,
+repeating progression. `librosa-hmm` remains the fallback when stems are unavailable.
+
 ## Caveats
 
 - Synthetic audio is far cleaner than real mixes (no vocals masking the harmony, perfect
