@@ -50,7 +50,7 @@ Real recordings exposed what the synthetic set couldn't: vocals and drums pull t
 the chords. `StemChordDetector` (`analysis/chords_stems.py`) listens to the Demucs "other" stem
 for chord colour and the bass stem for the root, corrects tuning, and adds 7, maj7 and m7 chords
 with a preference for simple, in-key chords. It scores 98% at beat resolution on the synthetic
-set (triad level). On real songs it was only compared by ear against known progressions, since no
+set (triad level). On real songs the output was only inspected for plausibility and repetition, as no
 labelled real songs exist yet: "Leave the Door Open" went from scattered triads to a stable,
 repeating progression. `librosa-hmm` remains the fallback when stems are unavailable.
 
@@ -59,6 +59,6 @@ repeating progression. `librosa-hmm` remains the fallback when stems are unavail
 - Synthetic audio is far cleaner than real mixes (no vocals masking the harmony, perfect
   tuning, steady tempo). Expect noticeably lower numbers on real songs, typically 60–80% at
   triad level for pop/folk.
-- The vocabulary is major/minor triads only. Sevenths, sus and slash chords come out as the
+- `librosa-hmm` knows major/minor triads only. Sevenths, sus and slash chords come out as the
   nearest triad (Cmaj7 → C), which is why detected sheets are drafts.
 - Tuning was done on this same set, so these numbers are optimistic.
