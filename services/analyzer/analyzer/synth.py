@@ -67,6 +67,9 @@ class SynthSong:
     labels: list[tuple[float, float, str]]
     key: str
     beats_per_bar: int
+    #: Ground-truth stems, as Demucs would give them (same scaling as `audio`).
+    harmonic: np.ndarray | None = None
+    bass: np.ndarray | None = None
 
 
 def render_song(
@@ -86,6 +89,8 @@ def render_song(
     total_beats = sum(b for _, b in progression)
     n = int((total_beats * beat + 1.0) * sr)
     out = np.zeros(n)
+    harmonic = np.zeros(n)
+    bass_line = np.zeros(n)
     labels: list[tuple[float, float, str]] = []
     t = 0.0
     beat_index = 0
@@ -106,6 +111,7 @@ def render_song(
                 tone = _pluck(midi_to_hz(m), dur, sr, rng) * 0.22
                 end = min(n, s + len(tone))
                 out[s:end] += tone[: end - s]
+                harmonic[s:end] += tone[: end - s]
             if (beat_index + b) % 2 == 0:
                 bn = int(beat * 1.9 * sr)
                 tt = np.arange(bn) / sr
@@ -114,6 +120,7 @@ def render_song(
                 tone *= np.exp(-tt * 1.5) * _env(bn, sr)
                 end = min(n, start + bn)
                 out[start:end] += tone[: end - start]
+                bass_line[start:end] += tone[: end - start]
             if drums:
                 pos = (beat_index + b) % beats_per_bar
                 ln = int(0.12 * sr)
@@ -140,8 +147,17 @@ def render_song(
         t += beats * beat
         beat_index += beats
     out += rng.normal(0, 0.003, n)
-    out /= max(1e-9, np.abs(out).max()) / 0.8
-    return SynthSong(out.astype(np.float32), sr, bpm, labels, key, beats_per_bar)
+    scale = max(1e-9, np.abs(out).max()) / 0.8
+    return SynthSong(
+        (out / scale).astype(np.float32),
+        sr,
+        bpm,
+        labels,
+        key,
+        beats_per_bar,
+        (harmonic / scale).astype(np.float32),
+        (bass_line / scale).astype(np.float32),
+    )
 
 
 #: Progressions for the spike / tests: (name, key, bpm, beats per bar, progression).

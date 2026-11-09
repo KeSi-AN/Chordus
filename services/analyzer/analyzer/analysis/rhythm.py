@@ -30,6 +30,17 @@ def track_beats(y: np.ndarray, sr: int, hop_length: int = 512) -> Rhythm:
     return Rhythm(bpm=round(bpm, 1), beat_times=beat_times, beat_frames=beat_frames)
 
 
+#: At or above this, the tracked pulse is treated as double the counted tempo.
+HALF_TIME_ABOVE_BPM = 135.0
+
+
+def half_time_offset(beat_labels: list[str]) -> int:
+    """Which alternate beats (0 or 1) are the counted ones: chords change on those."""
+    changes = _change_indices(beat_labels)
+    odd = sum(c % 2 for c in changes)
+    return 1 if odd > len(changes) - odd else 0
+
+
 def _change_indices(beat_labels: list[str]) -> list[int]:
     return [i for i in range(1, len(beat_labels)) if beat_labels[i] != beat_labels[i - 1]]
 
@@ -47,7 +58,7 @@ def estimate_meter(beat_labels: list[str]) -> int:
     c3, c4 = concentration(3), concentration(4)
     # Changes every 2 beats look "3-ish" to neither and "4-ish" to 4, so prefer 4 unless 3 is
     # clearly better.
-    return 3 if c3 > c4 * 1.15 and c3 > 2.0 else 4
+    return 3 if c3 > c4 * 1.3 and c3 > 2.0 else 4
 
 
 def downbeat_phase(
