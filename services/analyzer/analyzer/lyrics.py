@@ -17,8 +17,8 @@ SR = 16000
 #: A new lyric line starts after a pause this long (seconds).
 LINE_GAP = 0.7
 MAX_WORDS_PER_LINE = 10
-#: Whisper segments looking like this are hallucinated or unusable.
-MAX_NO_SPEECH_PROB = 0.8
+#: Whisper segments below this are unusable. Its no-speech score is not used: singing often
+#: rates as "not speech", so silence is judged from the vocal stem instead (drop_quiet_words).
 MIN_AVG_LOGPROB = -1.3
 #: A word is dropped if the vocal stem is near silent while it is "sung".
 QUIET_WORD_RATIO = 0.03
@@ -139,16 +139,16 @@ def _run(whisper, y: np.ndarray, model_name: str, device: str, language: str | N
         language=language,
         word_timestamps=True,
         condition_on_previous_text=False,
+        no_speech_threshold=None,
+        logprob_threshold=None,
+        temperature=(0.0, 0.2),
         # Half precision produces NaNs on GTX 16xx cards.
         fp16=False,
         verbose=None,
     )
     words: list[Word] = []
     for seg in result["segments"]:
-        if (
-            seg.get("no_speech_prob", 0) > MAX_NO_SPEECH_PROB
-            or seg.get("avg_logprob", 0) < MIN_AVG_LOGPROB
-        ):
+        if seg.get("avg_logprob", 0) < MIN_AVG_LOGPROB:
             continue
         for w in seg.get("words", []):
             text = clean_word(w["word"])
