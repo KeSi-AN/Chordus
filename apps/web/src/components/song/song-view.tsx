@@ -13,12 +13,12 @@ import {
   uniqueChords,
 } from "@chordus/core";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import { chordTokenIndices, SheetView } from "@/components/sheet-view";
 import { buttonVariants } from "@/components/ui/button";
 import { logClientEvent } from "@/lib/api-client";
-import { activeTimelineIndex, heardTime } from "@/lib/timeline";
+import { heardTime, sameCursor, timelineCursor, type TimelineCursor } from "@/lib/timeline";
 import { useStoredNumber } from "@/lib/use-stored-number";
 import { cn } from "@/lib/utils";
 import type { SheetOrigin, Song, Source, StrumPattern } from "@/server/db/schema";
@@ -78,7 +78,8 @@ export function SongView({
 
   const transpose = prefs.fields.transpose.value;
   const capo = prefs.fields.capo.value;
-  const [playTime, setPlayTime] = useState<number | null>(null);
+  const audioPitch = prefs.fields.audioPitch.value;
+  const [cursor, setCursor] = useState<TimelineCursor | null>(null);
 
   const view = useMemo(() => {
     const base = withKey(chordpro, song.originalKey);
@@ -103,32 +104,32 @@ export function SongView({
   const timeline =
     songTimeline && audio && songTimeline.sourceId === audio.id ? songTimeline.entries : null;
   const tokenCount = useMemo(() => chordTokenIndices(view.parsed).count, [view.parsed]);
+  // The player reports its time about ten times a second. Keeping that time in state would
+  // re-render this whole page (sheet, diagrams, panels) at that rate for as long as audio plays;
+  // the cursor only changes when the chord does.
+  const onPlaybackTime = useCallback(
+    (seconds: number) => {
+      if (!timeline || timeline.length === 0) return;
+      const next = timelineCursor(timeline, heardTime(seconds, audioPitch));
+      setCursor((prev) => (sameCursor(prev, next) ? prev : next));
+    },
+    [timeline, audioPitch],
+  );
   const sync = useMemo(() => {
-    if (!timeline || timeline.length === 0 || playTime === null) return null;
-    const idx = activeTimelineIndex(timeline, heardTime(playTime, prefs.fields.audioPitch.value));
+    if (!timeline || timeline.length === 0 || cursor === null) return null;
     const shape = (c: string) =>
       c === "N" ? "N.C." : transposeChord(c, transpose - capo, view.shapeKey);
-    const current = idx === null ? null : timeline[idx]!;
-    const next =
-      idx === null
-        ? timeline.find((e) => e.start > playTime)
-        : timeline.slice(idx + 1).find((e) => e.chord !== current!.chord);
+    // The cursor can outlive its timeline for a moment when a new analysis arrives.
+    const current = cursor.index === null ? null : (timeline[cursor.index] ?? null);
+    const next = cursor.nextIndex === null ? null : (timeline[cursor.nextIndex] ?? null);
     return {
       // The sheet can follow along only if it still has one chord token per timeline entry.
-      sheetIndex: tokenCount === timeline.length ? idx : null,
+      sheetIndex: current && tokenCount === timeline.length ? cursor.index : null,
       current: current ? shape(current.chord) : null,
       uncertain: current ? current.confidence < 0.55 : false,
       next: next ? shape(next.chord) : null,
     };
-  }, [
-    timeline,
-    playTime,
-    prefs.fields.audioPitch.value,
-    transpose,
-    capo,
-    view.shapeKey,
-    tokenCount,
-  ]);
+  }, [timeline, cursor, transpose, capo, view.shapeKey, tokenCount]);
 
   return (
     <div className="space-y-4">
@@ -201,7 +202,7 @@ export function SongView({
               audio={audio}
               prefs={prefs}
               onAudioChange={setAudio}
-              onPlaybackTime={setPlayTime}
+              onPlaybackTime={onPlaybackTime}
             />
           </section>
           {(analysis || audio || hasYouTubeSource) && (

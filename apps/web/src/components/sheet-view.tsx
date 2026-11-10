@@ -1,7 +1,7 @@
 "use client";
 
 import type { ParsedSheet, SheetLine, Segment } from "@chordus/core";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,11 +18,16 @@ export function chordTokenIndices(sheet: ParsedSheet): { map: number[][][]; coun
   return { map, count: n };
 }
 
+const NO_INDICES: number[] = [];
+
 /**
  * Chords-above-lyrics rendering. Each segment is an inline column (chord on top, lyric below)
  * so chords stay over the right syllable and long lines wrap between segments.
+ *
+ * Memoized, with each line told about the highlight only when it holds it: during synced
+ * playback a chord change re-renders the two lines involved, not the whole sheet.
  */
-export function SheetView({
+export const SheetView = memo(function SheetView({
   sheet,
   fontSize = 16,
   className,
@@ -71,23 +76,27 @@ export function SheetView({
           )}
           {!section.isRepeat || section.lines.length > 0 ? (
             <div>
-              {section.lines.map((line, j) => (
-                <Line
-                  key={j}
-                  line={line}
-                  indices={map[i]?.[j] ?? []}
-                  activeIndex={activeChordIndex}
-                />
-              ))}
+              {section.lines.map((line, j) => {
+                const indices = map[i]?.[j] ?? NO_INDICES;
+                const holdsActive = activeChordIndex !== null && indices.includes(activeChordIndex);
+                return (
+                  <Line
+                    key={j}
+                    line={line}
+                    indices={indices}
+                    activeIndex={holdsActive ? activeChordIndex : null}
+                  />
+                );
+              })}
             </div>
           ) : null}
         </section>
       ))}
     </div>
   );
-}
+});
 
-function Line({
+const Line = memo(function Line({
   line,
   indices,
   activeIndex,
@@ -106,7 +115,7 @@ function Line({
     case "lyrics":
       return <LyricLine segments={line.segments} indices={indices} activeIndex={activeIndex} />;
   }
-}
+});
 
 /** Urdu, Arabic and Hebrew lyrics read right to left. */
 const RTL_RE = /[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufefc]/;

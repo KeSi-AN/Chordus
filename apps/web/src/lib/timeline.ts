@@ -29,3 +29,34 @@ export function heardTime(currentTime: number, pitchSemitones: number): number {
     ? currentTime
     : Math.max(0, currentTime - PITCH_SHIFT_LATENCY_SECONDS);
 }
+
+/** Where playback is in a timeline. It changes a few times a bar, not with every time update. */
+export interface TimelineCursor {
+  /** The entry playing now, or null in a gap (before the first chord, after the last). */
+  index: number | null;
+  /** The next entry with a different chord (or, in a gap, the next entry of any chord). */
+  nextIndex: number | null;
+}
+
+export function timelineCursor(timeline: readonly ChordTimelineEntry[], t: number): TimelineCursor {
+  const index = activeTimelineIndex(timeline, t);
+  let nextIndex: number | null = null;
+  if (index === null) {
+    const i = timeline.findIndex((e) => e.start > t);
+    nextIndex = i === -1 ? null : i;
+  } else {
+    const chord = timeline[index]!.chord;
+    for (let i = index + 1; i < timeline.length; i++) {
+      if (timeline[i]!.chord !== chord) {
+        nextIndex = i;
+        break;
+      }
+    }
+  }
+  return { index, nextIndex };
+}
+
+export function sameCursor(a: TimelineCursor | null, b: TimelineCursor | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.index === b.index && a.nextIndex === b.nextIndex;
+}
