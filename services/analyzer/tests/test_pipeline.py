@@ -177,3 +177,54 @@ def test_heartbeat_refreshes_the_job_lock(db, tmp_path):
     locked_at = db.execute("SELECT locked_at FROM jobs WHERE id = ?", (ids["job"],)).fetchone()[0]
     assert locked_at > long_ago
     assert dbm.claim_job(db) is None  # a live job is not handed to a second worker
+
+
+def test_reanalysis_updates_the_song_and_drops_the_old_stem(db, tmp_path, song_wav):
+    ids = make_song(db)
+    cfg = cfg_for(tmp_path, melody=True)
+    kwargs = dict(
+        extractor=FakeExtractor(song_wav), separate=fake_separate, transcriber=fake_transcribe
+    )
+    Worker(cfg, **kwargs).run_once()
+    first = dbm.get_row(db, "analyses", ids["analysis"])
+    first_stem = tmp_path / "data" / first["vocal_stem_path"]
+    assert first_stem.exists()
+    # Pretend the first run got the tempo and key wrong (as an older detector version did).
+    db.execute("UPDATE songs SET bpm = 200, original_key = 'F#' WHERE id = ?", (ids["song"],))
+    db.execute("UPDATE analyses SET bpm = 200, key = 'F#' WHERE id = ?", (ids["analysis"],))
+
+    second = "analysis-2"
+    db.execute(
+        "INSERT INTO analyses (id, song_id, source_id, status, progress, created_at, updated_at) "
+        "VALUES (?, ?, ?, 'queued', 0, 1, 1)",
+        (second, ids["song"], ids["source"]),
+    )
+    payload = json.dumps({"analysisId": second, "songId": ids["song"], "sourceId": ids["source"]})
+    db.execute(
+        "INSERT INTO jobs (id, type, payload, status, attempts, created_at, updated_at) "
+        "VALUES ('job-2', 'analyze', ?, 'queued', 0, 1, 1)",
+        (payload,),
+    )
+    Worker(cfg, **kwargs).run_once()
+
+    song = dbm.get_row(db, "songs", ids["song"])
+    again = dbm.get_row(db, "analyses", second)
+    assert again["status"] == "done"
+    assert song["original_key"] == again["key"] and abs(song["bpm"] - 100) < 4
+    assert not first_stem.exists()
+    assert dbm.get_row(db, "analyses", ids["analysis"])["vocal_stem_path"] is None
+    assert (tmp_path / "data" / again["vocal_stem_path"]).exists()
+
+
+def test_song_deleted_during_analysis_leaves_no_files(db, tmp_path, song_wav):
+    ids = make_song(db)
+
+    class DeletingExtractor(FakeExtractor):
+        def extract(self, video_id: str, out_dir: Path) -> ExtractResult:
+            db.execute("DELETE FROM songs WHERE id = ?", (ids["song"],))
+            return super().extract(video_id, out_dir)
+
+    Worker(cfg_for(tmp_path, melody=False), extractor=DeletingExtractor(song_wav)).run_once()
+    job = db.execute("SELECT status FROM jobs WHERE id = ?", (ids["job"],)).fetchone()
+    assert job["status"] == "failed"
+    assert not (tmp_path / "data" / "audio" / ids["song"]).exists()

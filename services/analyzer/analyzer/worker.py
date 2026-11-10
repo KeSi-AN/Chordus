@@ -89,7 +89,17 @@ class Worker:
             dbm.finish_job(self.conn, job.id, error=message[:500])
         finally:
             self.current_job = None
+            self._clean_up_deleted_song(job.payload.get("songId"))
         return True
+
+    def _clean_up_deleted_song(self, song_id: object) -> None:
+        """A song deleted while it was being analyzed would otherwise leave its files behind."""
+        if not isinstance(song_id, str) or dbm.get_row(self.conn, "songs", song_id) is not None:
+            return
+        try:
+            self.storage.delete_prefix(f"audio/{song_id}")
+        except (OSError, ValueError):
+            log.warning("Could not remove files of deleted song %s", song_id, exc_info=True)
 
     def run_forever(self) -> None:
         log.info("Worker polling %s every %.1fs", self.cfg.sqlite_path, self.cfg.poll_interval)

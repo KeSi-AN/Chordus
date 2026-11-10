@@ -278,3 +278,20 @@ def save_detected_sheet(conn: sqlite3.Connection, song_id: str, chordpro: str) -
         conn.execute("ROLLBACK")
         raise
     return sheet_id
+
+
+def superseded_vocal_stems(
+    conn: sqlite3.Connection, song_id: str, keep_analysis_id: str
+) -> list[str]:
+    """Forget the vocal stems of a song's older analyses and return their storage keys.
+
+    Each stem is ~10 MB per minute of audio and only the newest one is of any use.
+    """
+    rows = conn.execute(
+        "SELECT id, vocal_stem_path FROM analyses "
+        "WHERE song_id = ? AND id != ? AND vocal_stem_path IS NOT NULL",
+        (song_id, keep_analysis_id),
+    ).fetchall()
+    for row in rows:
+        conn.execute("UPDATE analyses SET vocal_stem_path = NULL WHERE id = ?", (row["id"],))
+    return [row["vocal_stem_path"] for row in rows]

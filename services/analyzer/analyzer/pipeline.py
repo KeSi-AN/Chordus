@@ -207,3 +207,9 @@ def run_analysis(
         dbm.update_analysis(
             conn, analysis_id, status="done", stage=stage, progress=1.0, error=None, **melody_fields
         )
+        # Only the newest vocal stem is kept: they are large and nothing reads the old ones.
+        for old_stem in dbm.superseded_vocal_stems(conn, song_id, analysis_id):
+            try:
+                storage.delete(old_stem)
+            except (OSError, ValueError):
+                log.warning("Could not delete old vocal stem %s", old_stem, exc_info=True)

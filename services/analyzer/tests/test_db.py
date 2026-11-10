@@ -190,3 +190,33 @@ def test_user_reset_to_four_four_survives_reanalysis(db):
     detected = dbm.previously_detected(db, ids["song"], "new")
     dbm.update_song(db, ids["song"], time_signature="3/4", detected=detected)
     assert dbm.get_row(db, "songs", ids["song"])["time_signature"] == "4/4"
+
+
+def test_superseded_vocal_stems_are_forgotten(db):
+    ids = make_song(db)
+    old = _finished_analysis(db, ids["song"], "G", 90.0, "4/4")
+    dbm.update_analysis(db, old, vocal_stem_path="audio/s/old-vocals.wav")
+    dbm.update_analysis(db, ids["analysis"], vocal_stem_path="audio/s/new-vocals.wav")
+    assert dbm.superseded_vocal_stems(db, ids["song"], ids["analysis"]) == [
+        "audio/s/old-vocals.wav"
+    ]
+    assert dbm.get_row(db, "analyses", old)["vocal_stem_path"] is None
+    assert dbm.get_row(db, "analyses", ids["analysis"])["vocal_stem_path"].endswith(
+        "new-vocals.wav"
+    )
+    assert dbm.superseded_vocal_stems(db, ids["song"], ids["analysis"]) == []
+
+
+def test_local_storage_delete(tmp_path):
+    s = LocalStorage(tmp_path)
+    src = tmp_path / "x.bin"
+    src.write_bytes(b"abc")
+    s.put_file("audio/a/one.bin", src)
+    s.put_file("audio/a/two.bin", src)
+    s.delete("audio/a/one.bin")
+    s.delete("audio/a/one.bin")  # already gone: not an error
+    assert not s.exists("audio/a/one.bin") and s.exists("audio/a/two.bin")
+    s.delete_prefix("audio/a/")
+    assert not (tmp_path / "audio" / "a").exists()
+    with pytest.raises(ValueError):
+        s.delete_prefix("../outside")
