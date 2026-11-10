@@ -9,6 +9,9 @@ import { getJson, sendJson } from "@/lib/api-client";
 import type { AnalysisView } from "@/server/services/analysis";
 
 const POLL_MS = 2000;
+/** How soon, and then how often, to ask whether the analyzer is running at all. */
+const HEALTH_FIRST_MS = 4000;
+const HEALTH_EVERY_MS = 10_000;
 
 function noteRange(low: number | null, high: number | null): string | null {
   if (low === null || high === null) return null;
@@ -31,17 +34,18 @@ export function AnalysisPanel({
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const active = analysis?.status === "queued" || analysis?.status === "running";
+  const analysisId = analysis?.id ?? null;
   const lastStatus = useRef(analysis?.status);
   const lastStage = useRef(analysis?.stage ?? null);
 
   // Poll while the job is active; refresh the page (new sheet, audio, key) once it finishes.
   useEffect(() => {
-    if (!active || !analysis) return;
+    if (!active || !analysisId) return;
     let cancelled = false;
     const tick = async () => {
       try {
         const { analysis: next } = await getJson<{ analysis: AnalysisView }>(
-          `/api/analyses/${analysis.id}`,
+          `/api/analyses/${analysisId}`,
         );
         if (cancelled) return;
         setAnalysis(next);
@@ -69,18 +73,32 @@ export function AnalysisPanel({
       cancelled = true;
       clearInterval(timer);
     };
-  }, [active, analysis, router]);
+    // Keyed on the id, not the analysis object: that changes with every poll, which would tear
+    // the interval down and build it again every two seconds.
+  }, [active, analysisId, router]);
 
-  // If nothing has started after a few seconds, check whether the analyzer is running at all.
+  // While a job is waiting or running, keep checking that the analyzer is there: it may never
+  // have been started, be started later, or stop halfway (which leaves the job "running").
   useEffect(() => {
-    if (analysis?.status !== "queued") return;
-    const timer = setTimeout(() => {
+    if (!active) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = () => {
       getJson<{ online: boolean }>("/api/analyzer/health")
-        .then((h) => setAnalyzerOnline(h.online))
-        .catch(() => setAnalyzerOnline(false));
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [analysis?.status]);
+        .then((h) => h.online)
+        .catch(() => false)
+        .then((online) => {
+          if (cancelled) return;
+          setAnalyzerOnline(online);
+          timer = setTimeout(check, HEALTH_EVERY_MS);
+        });
+    };
+    timer = setTimeout(check, HEALTH_FIRST_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [active]);
 
   const start = async () => {
     setStarting(true);
@@ -92,6 +110,7 @@ export function AnalysisPanel({
         {},
       );
       lastStatus.current = next.status;
+      lastStage.current = next.stage;
       setAnalyzerOnline(null);
       setAnalysis(next);
     } catch (err) {
@@ -151,10 +170,17 @@ export function AnalysisPanel({
           {analyzerOnline === false && (
             <p className="flex gap-1.5 text-xs text-amber-700 dark:text-amber-400">
               <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden />
-              <span>
-                The analyzer isn&apos;t running. Start it with <code>pnpm analyzer</code> (or run
-                everything with <code>pnpm dev</code>); this job will start automatically.
-              </span>
+              {analysis.status === "queued" ? (
+                <span>
+                  The analyzer isn&apos;t running. Start it with <code>pnpm analyzer</code> (or run
+                  everything with <code>pnpm dev</code>); this job will start automatically.
+                </span>
+              ) : (
+                <span>
+                  The analyzer stopped while working on this. Start it again with{" "}
+                  <code>pnpm analyzer</code>; the job restarts by itself within a couple of minutes.
+                </span>
+              )}
             </p>
           )}
         </div>
