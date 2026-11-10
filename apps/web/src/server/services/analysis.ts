@@ -1,5 +1,5 @@
 import { parseYouTubeVideoId } from "@chordus/core";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { Db } from "../db/client";
 import {
   analyses,
@@ -7,6 +7,7 @@ import {
   songs,
   sources,
   type Analysis,
+  type ChordTimelineEntry,
   type Source,
   type VocalistHint,
 } from "../db/schema";
@@ -15,7 +16,11 @@ import { attachAudioFile } from "./audio";
 import { logEvent } from "./events";
 import { getSongDetail, ValidationError } from "./songs";
 
-/** What the song page needs to show analysis progress and results. */
+/**
+ * What the song page needs to show analysis progress and results. The chord timeline is left
+ * out on purpose: this is polled every 2 s while a job runs, and a timeline is 10-15 KB.
+ * The page loads it once through `latestTimeline`.
+ */
 export type AnalysisView = Pick<
   Analysis,
   | "id"
@@ -26,7 +31,6 @@ export type AnalysisView = Pick<
   | "key"
   | "keyConfidence"
   | "bpm"
-  | "chordTimeline"
   | "melodyLowMidi"
   | "melodyHighMidi"
   | "melodyP10Midi"
@@ -44,7 +48,6 @@ function toView(a: Analysis): AnalysisView {
     key: a.key,
     keyConfidence: a.keyConfidence,
     bpm: a.bpm,
-    chordTimeline: a.chordTimeline,
     melodyLowMidi: a.melodyLowMidi,
     melodyHighMidi: a.melodyHighMidi,
     melodyP10Midi: a.melodyP10Midi,
@@ -101,6 +104,37 @@ export async function latestAnalysis(db: Db, songId: string): Promise<AnalysisVi
     .orderBy(desc(analyses.createdAt), desc(sql`${analyses}.rowid`))
     .limit(1);
   return row ? toView(row) : null;
+}
+
+export interface SongTimeline {
+  analysisId: string;
+  /** The audio the timeline was computed from; it only applies while that audio plays. */
+  sourceId: string | null;
+  entries: ChordTimelineEntry[];
+}
+
+/**
+ * The chord timeline that goes with the song's current detected sheet: the newest one any
+ * analysis has produced, whatever that analysis's status.
+ *
+ * Not simply "the latest analysis, if done": a running analysis writes its draft timeline at
+ * the moment its draft sheet becomes the primary one, minutes before it finishes, and an
+ * analysis that failed or has only just started has none, in which case the previous
+ * analysis's sheet (and so its timeline) is still what is on screen.
+ */
+export async function latestTimeline(db: Db, songId: string): Promise<SongTimeline | null> {
+  const [row] = await db
+    .select({
+      analysisId: analyses.id,
+      sourceId: analyses.sourceId,
+      entries: analyses.chordTimeline,
+    })
+    .from(analyses)
+    .where(and(eq(analyses.songId, songId), isNotNull(analyses.chordTimeline)))
+    .orderBy(desc(analyses.createdAt), desc(sql`${analyses}.rowid`))
+    .limit(1);
+  if (!row?.entries || row.entries.length === 0) return null;
+  return { analysisId: row.analysisId, sourceId: row.sourceId, entries: row.entries };
 }
 
 function placeholderTitle(kind: "youtube" | "file", name?: string): string {

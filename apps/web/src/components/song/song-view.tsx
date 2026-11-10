@@ -22,7 +22,7 @@ import { activeTimelineIndex, heardTime } from "@/lib/timeline";
 import { useStoredNumber } from "@/lib/use-stored-number";
 import { cn } from "@/lib/utils";
 import type { SheetOrigin, Song, Source, StrumPattern } from "@/server/db/schema";
-import type { AnalysisView } from "@/server/services/analysis";
+import type { AnalysisView, SongTimeline } from "@/server/services/analysis";
 import type { PrefsView } from "@/server/services/prefs";
 import { AnalysisPanel } from "./analysis-panel";
 import { AudioPanel } from "./audio-player";
@@ -51,6 +51,7 @@ export function SongView({
   initialAudio,
   hasYouTubeSource,
   analysis,
+  timeline: songTimeline,
   initialPrefs,
   initialPatterns,
 }: {
@@ -60,6 +61,8 @@ export function SongView({
   initialAudio: Source | null;
   hasYouTubeSource: boolean;
   analysis: AnalysisView | null;
+  /** Chord timeline of the song's detected sheet (see `latestTimeline`). */
+  timeline: SongTimeline | null;
   initialPrefs: PrefsView;
   initialPatterns: StrumPattern[];
 }) {
@@ -98,9 +101,7 @@ export function SongView({
 
   // Synced chords: only when the timeline was computed from the audio that is playing.
   const timeline =
-    analysis?.status === "done" && audio && analysis.sourceId === audio.id
-      ? (analysis.chordTimeline ?? null)
-      : null;
+    songTimeline && audio && songTimeline.sourceId === audio.id ? songTimeline.entries : null;
   const tokenCount = useMemo(() => chordTokenIndices(view.parsed).count, [view.parsed]);
   const sync = useMemo(() => {
     if (!timeline || timeline.length === 0 || playTime === null) return null;

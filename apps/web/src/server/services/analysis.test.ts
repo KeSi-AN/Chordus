@@ -1,5 +1,5 @@
 import path from "node:path";
-import { eq } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DEFAULT_USER_ID as U } from "../constants";
 import { analyses, jobs, sources } from "../db/schema";
@@ -11,6 +11,7 @@ import {
   importFromFile,
   importFromYouTube,
   latestAnalysis,
+  latestTimeline,
 } from "./analysis";
 import { getSongDetail, ValidationError } from "./songs";
 
@@ -100,5 +101,49 @@ describe("analyzeSong / progress", () => {
 
   it("needs audio or a YouTube source", async () => {
     await expect(analyzeSong(t.db, U, "seed-clementine")).rejects.toThrow(/Attach audio/);
+  });
+});
+
+describe("latestTimeline", () => {
+  const timeline = (chord: string) => [{ start: 0, end: 2, chord, confidence: 0.9 }];
+
+  it("follows the newest analysis that has produced a timeline", async () => {
+    const file = new File([new Uint8Array(8)], "b.wav", { type: "audio/wav" });
+    const first = await importFromFile(t.db, storage, { userId: U, file, maxBytes: 1000 });
+    const { songId } = first;
+    expect(await latestTimeline(t.db, songId)).toBeNull();
+
+    // The draft timeline is usable while the analysis is still running (lyrics come later).
+    await t.db
+      .update(analyses)
+      .set({ status: "running", chordTimeline: timeline("G") })
+      .where(eq(analyses.id, first.analysis!.id));
+    expect(await latestTimeline(t.db, songId)).toMatchObject({
+      analysisId: first.analysis!.id,
+      sourceId: first.analysis!.sourceId,
+      entries: timeline("G"),
+    });
+
+    // A re-analysis that has not got to the chords yet, or failed before them, changes nothing.
+    await t.db.update(analyses).set({ status: "done" }).where(eq(analyses.id, first.analysis!.id));
+    const again = await analyzeSong(t.db, U, songId);
+    expect((await latestTimeline(t.db, songId))?.analysisId).toBe(first.analysis!.id);
+    await t.db.update(analyses).set({ status: "failed" }).where(eq(analyses.id, again.id));
+    expect((await latestTimeline(t.db, songId))?.entries).toEqual(timeline("G"));
+
+    // Once a newer analysis has chords, its sheet is the one on screen.
+    const third = await analyzeSong(t.db, U, songId);
+    await t.db
+      .update(analyses)
+      .set({ status: "running", chordTimeline: timeline("D") })
+      .where(eq(analyses.id, third.id));
+    expect((await latestTimeline(t.db, songId))?.entries).toEqual(timeline("D"));
+  });
+
+  it("is not part of the polled analysis view", async () => {
+    const [row] = await t.db.select().from(analyses).where(isNotNull(analyses.chordTimeline));
+    const view = await getAnalysis(t.db, U, row!.id);
+    expect(view).not.toBeNull();
+    expect(view).not.toHaveProperty("chordTimeline");
   });
 });
