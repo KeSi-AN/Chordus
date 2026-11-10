@@ -41,6 +41,9 @@ class Config:
     enable_melody: bool
     enable_lyrics: bool = True
     whisper_model: str = "medium"
+    #: Longer audio is refused: a mix, a live stream or a full album would tie up the
+    #: only worker for a very long time.
+    max_minutes: float = 20.0
 
     @property
     def sqlite_path(self) -> Path:
@@ -68,4 +71,5 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         enable_melody=(env.get("ANALYZER_MELODY") or "1") not in ("0", "false", "no"),
         enable_lyrics=(env.get("ANALYZER_LYRICS") or "1") not in ("0", "false", "no"),
         whisper_model=env.get("WHISPER_MODEL") or "medium",
+        max_minutes=float(env.get("ANALYZER_MAX_MINUTES") or 20),
     )

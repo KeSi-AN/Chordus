@@ -65,12 +65,31 @@ class ExtractResult:
     ext: str
 
 
+class ExtractError(RuntimeError):
+    """The video cannot be used; the message is shown to the user as-is."""
+
+
+def check_video(info: dict, max_seconds: float | None) -> None:
+    """Refuse live streams and videos too long to be one song, before downloading anything."""
+    if info.get("is_live") or info.get("live_status") in ("is_live", "is_upcoming"):
+        raise ExtractError("Live streams can't be analyzed. Use the video once it has ended.")
+    duration = info.get("duration")
+    if max_seconds and duration and duration > max_seconds:
+        raise ExtractError(
+            f"This video is {duration / 60:.0f} minutes long; the limit is "
+            f"{max_seconds / 60:.0f} minutes (ANALYZER_MAX_MINUTES)."
+        )
+
+
 class Extractor(Protocol):
     def extract(self, video_id: str, out_dir: Path) -> ExtractResult: ...
 
 
 class YtDlpExtractor:
     """Downloads the best audio-only stream (m4a preferred: plays everywhere, no re-encode)."""
+
+    def __init__(self, max_seconds: float | None = None) -> None:
+        self.max_seconds = max_seconds
 
     def extract(self, video_id: str, out_dir: Path) -> ExtractResult:
         import yt_dlp
@@ -83,9 +102,15 @@ class YtDlpExtractor:
             "quiet": True,
             "no_warnings": True,
             "noprogress": True,
+            # A stalled connection must fail the job, not hang the only worker forever.
+            "socket_timeout": 30,
+            "retries": 3,
+            "fragment_retries": 3,
         }
+        url = f"https://www.youtube.com/watch?v={video_id}"
         with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=True)
+            check_video(ydl.extract_info(url, download=False) or {}, self.max_seconds)
+            info = ydl.extract_info(url, download=True)
         path = Path(ydl.prepare_filename(info))
         if not path.exists():
             matches = list(out_dir.glob(f"{video_id}.*"))

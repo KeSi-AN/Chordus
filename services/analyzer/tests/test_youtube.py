@@ -51,3 +51,17 @@ def test_parse_video_id_rejects(s):
 )
 def test_clean_title(title, uploader, expected):
     assert clean_title(title, uploader) == expected
+
+
+def test_check_video_refuses_live_and_overlong():
+    from analyzer.youtube import ExtractError, check_video
+
+    check_video({"duration": 240}, 1200)
+    check_video({"duration": 99999}, None)  # no limit configured
+    check_video({}, 1200)  # unknown duration: let the download decide
+    with pytest.raises(ExtractError, match="60 minutes long"):
+        check_video({"duration": 3600}, 1200)
+    with pytest.raises(ExtractError, match="Live"):
+        check_video({"is_live": True}, 1200)
+    with pytest.raises(ExtractError, match="Live"):
+        check_video({"live_status": "is_upcoming", "duration": None}, 1200)

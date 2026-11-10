@@ -8,6 +8,8 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
+import soundfile as sf
+
 from . import db as dbm
 from .aligned_sheet import build_aligned_sheet
 from .analysis import analyze_harmony
@@ -19,7 +21,7 @@ from .draft import build_draft
 from .lyrics import Transcript, transcribe
 from .melody import StemPaths, separate_stems, track_melody
 from .storage import Storage
-from .youtube import Extractor, YtDlpExtractor
+from .youtube import ExtractError, Extractor, YtDlpExtractor
 
 log = logging.getLogger(__name__)
 
@@ -73,7 +75,12 @@ def run_analysis(
                 raise JobError("The uploaded audio file is missing from storage")
         elif source["kind"] == "youtube" and source["youtube_video_id"]:
             progress("Downloading from YouTube", 0.02)
-            res = (extractor or YtDlpExtractor()).extract(source["youtube_video_id"], tmp / "dl")
+            try:
+                res = (extractor or YtDlpExtractor(cfg.max_minutes * 60)).extract(
+                    source["youtube_video_id"], tmp / "dl"
+                )
+            except ExtractError as exc:
+                raise JobError(str(exc)) from exc
             key = f"audio/{song_id}/{source_id}.{res.ext}"
             storage.put_file(key, res.path)
             dbm.set_source_file(
@@ -91,6 +98,12 @@ def run_analysis(
         # 2. Stems (best-effort: without them chords use the full mix and there are no lyrics).
         progress("Decoding audio", 0.1)
         wav44 = to_wav(audio_path, tmp / "mix.wav", sr=44100)
+        minutes = sf.info(str(wav44)).duration / 60
+        if minutes > cfg.max_minutes:
+            raise JobError(
+                f"The audio is {minutes:.0f} minutes long; the limit is "
+                f"{cfg.max_minutes:.0f} minutes (ANALYZER_MAX_MINUTES)."
+            )
         y, sr = load_mono(wav44, sr=22050)
         if len(y) < sr * 5:
             raise JobError("The audio is shorter than 5 seconds")

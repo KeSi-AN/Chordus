@@ -164,21 +164,6 @@ def test_health_endpoint(tmp_path):
     assert body["ok"] is True and body["worker"] is False and body["device"] == "cpu"
 
 
-def test_heartbeat_refreshes_the_job_lock(db, tmp_path):
-    import time
-
-    from analyzer.worker import Heartbeat
-
-    ids = make_song(db)
-    long_ago = 1_000_000_000_000
-    assert dbm.claim_job(db, now=long_ago) is not None
-    with Heartbeat(tmp_path / "test.db", ids["job"], interval=0.05):
-        time.sleep(0.5)
-    locked_at = db.execute("SELECT locked_at FROM jobs WHERE id = ?", (ids["job"],)).fetchone()[0]
-    assert locked_at > long_ago
-    assert dbm.claim_job(db) is None  # a live job is not handed to a second worker
-
-
 def test_reanalysis_updates_the_song_and_drops_the_old_stem(db, tmp_path, song_wav):
     ids = make_song(db)
     cfg = cfg_for(tmp_path, melody=True)
@@ -216,6 +201,15 @@ def test_reanalysis_updates_the_song_and_drops_the_old_stem(db, tmp_path, song_w
     assert (tmp_path / "data" / again["vocal_stem_path"]).exists()
 
 
+def test_overlong_audio_is_refused(db, tmp_path, song_wav):
+    ids = make_song(db)
+    cfg = cfg_for(tmp_path, melody=False)
+    cfg = Config(**{**cfg.__dict__, "max_minutes": 0.1})
+    Worker(cfg, extractor=FakeExtractor(song_wav)).run_once()
+    a = dbm.get_row(db, "analyses", ids["analysis"])
+    assert a["status"] == "failed" and "ANALYZER_MAX_MINUTES" in a["error"]
+
+
 def test_song_deleted_during_analysis_leaves_no_files(db, tmp_path, song_wav):
     ids = make_song(db)
 
@@ -228,3 +222,18 @@ def test_song_deleted_during_analysis_leaves_no_files(db, tmp_path, song_wav):
     job = db.execute("SELECT status FROM jobs WHERE id = ?", (ids["job"],)).fetchone()
     assert job["status"] == "failed"
     assert not (tmp_path / "data" / "audio" / ids["song"]).exists()
+
+
+def test_heartbeat_refreshes_the_job_lock(db, tmp_path):
+    import time
+
+    from analyzer.worker import Heartbeat
+
+    ids = make_song(db)
+    long_ago = 1_000_000_000_000
+    assert dbm.claim_job(db, now=long_ago) is not None
+    with Heartbeat(tmp_path / "test.db", ids["job"], interval=0.05):
+        time.sleep(0.5)
+    locked_at = db.execute("SELECT locked_at FROM jobs WHERE id = ?", (ids["job"],)).fetchone()[0]
+    assert locked_at > long_ago
+    assert dbm.claim_job(db) is None  # a live job is not handed to a second worker
