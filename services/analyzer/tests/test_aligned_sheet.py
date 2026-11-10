@@ -105,6 +105,14 @@ def test_clean_word_removes_chordpro_syntax():
     assert clean_word("{x}") == "x"
 
 
+def test_clean_word_drops_punctuation_only_tokens():
+    assert clean_word(" ...... ") == ""
+    assert clean_word("\u06d4" * 40) == ""  # a run of Urdu full stops, seen on a real song
+    assert clean_word(" open,") == "open,"
+    assert clean_word("\u0639\u0634\u0642") == "\u0639\u0634\u0642"  # Urdu letters are kept
+    assert clean_word("1999") == "1999"
+
+
 def test_densest_window_finds_the_singing():
     y = np.zeros(16000 * 100)
     y[16000 * 60 : 16000 * 80] = 0.5

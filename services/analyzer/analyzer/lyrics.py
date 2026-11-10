@@ -56,8 +56,13 @@ class Transcript:
 
 
 def clean_word(text: str) -> str:
-    """ChordPro reserves [] and {}; Whisper sometimes emits them for "[Music]"."""
-    return "".join(c for c in text.strip() if c not in "[]{}")
+    """ChordPro reserves [] and {}; Whisper sometimes emits them for "[Music]".
+
+    A "word" with no letter or digit in it (Whisper can fill a quiet passage with a long run of
+    full stops) is not a lyric and becomes empty.
+    """
+    cleaned = "".join(c for c in text.strip() if c not in "[]{}")
+    return cleaned if any(c.isalnum() for c in cleaned) else ""
 
 
 def _split_long(words: list[Word]) -> list[list[Word]]:
