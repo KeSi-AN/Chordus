@@ -162,8 +162,14 @@ def build_aligned_sheet(
         out.append("")
         instrumental("Outro", lines[-1].end, duration)
 
+    # Tokens are in sheet order, which must also be time order: playback finds the current chord
+    # by binary search. An instrumental bar can begin before the last sung chord of the line
+    # above it (bars are picked by their midpoint), so times are never allowed to step back.
+    times: list[float] = []
+    for t, *_ in starts:
+        times.append(max(t, times[-1]) if times else t)
     timeline = [
-        BarToken(t, starts[i + 1][0] if i + 1 < len(starts) else duration, chord, conf, bar)
-        for i, (t, chord, conf, bar) in enumerate(starts)
+        BarToken(times[i], times[i + 1] if i + 1 < len(starts) else duration, chord, conf, bar)
+        for i, (_, chord, conf, bar) in enumerate(starts)
     ]
     return AlignedSheet("\n".join(out).rstrip() + "\n", timeline)

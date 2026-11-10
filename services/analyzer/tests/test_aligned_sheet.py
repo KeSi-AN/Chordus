@@ -106,3 +106,26 @@ def test_vocabulary_and_key_fit():
     assert fits_key(vocab["Am7"], 0, "major")
     assert not fits_key(vocab["Eb"], 0, "major")
     assert fits_key(vocab["E7"], 9, "minor")
+
+
+def test_timeline_never_steps_back_into_an_instrumental():
+    # The chord change at 9.4 lands on the last word; the bar picked for the break that
+    # follows (by its midpoint) started at 8.0, before that word.
+    bars = [BarToken(8, 12, "D", 0.9, 2), BarToken(12, 16, "G", 0.9, 3)]
+    spans = [span(0, 9.4, "G"), span(9.4, 12, "D"), span(12, 20, "G")]
+    first = LyricLine([Word(6.0, 7.0, "sung"), Word(7.0, 8.0, "right"), Word(9.2, 9.8, "here")])
+    sheet = build_aligned_sheet(
+        spans,
+        [first, line(17, "next", "line")],
+        bars,
+        title=None,
+        artist=None,
+        key=None,
+        bpm=None,
+        time_signature="4/4",
+        duration=20,
+    )
+    starts = [t.start for t in sheet.timeline]
+    assert starts == sorted(starts)
+    assert all(t.end >= t.start for t in sheet.timeline)
+    assert len(sheet.timeline) == len(re.findall(r"\[[^\]]+\]", sheet.chordpro))
