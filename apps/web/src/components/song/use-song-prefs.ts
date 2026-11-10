@@ -55,6 +55,27 @@ export function useSongPrefs(songId: string, initial: PrefsView) {
   const [fields, setFields] = useState<Fields>(() => fromView(initial));
   const [pitchLinked, setPitchLinked] = useState(initial.pitchLinked);
   const [confirmedAt, setConfirmedAt] = useState(initial.confirmedAt);
+
+  // The server sends fresh suggestions whenever the page refreshes, which it does each time the
+  // analyzer delivers something (audio, key, a sheet). Take them for every field the user has
+  // not edited here; unsaved edits stay, and nothing else on the page has to remount.
+  const [seenInitial, setSeenInitial] = useState(initial);
+  if (seenInitial !== initial) {
+    setSeenInitial(initial);
+    const server = fromView(initial);
+    const keep = <T>(local: PrefField<T>, fresh: PrefField<T>) =>
+      local.state === "edited" ? local : fresh;
+    setFields((f) => ({
+      transpose: keep(f.transpose, server.transpose),
+      audioPitch: keep(f.audioPitch, server.audioPitch),
+      capo: keep(f.capo, server.capo),
+      strum: keep(f.strum, server.strum),
+    }));
+    if (!Object.values(fields).some((f) => f.state === "edited")) {
+      setPitchLinked(initial.pitchLinked);
+      setConfirmedAt(initial.confirmedAt);
+    }
+  }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resuggested, setResuggested] = useState<SongSuggestions | null>(null);

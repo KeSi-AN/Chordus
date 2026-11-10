@@ -67,7 +67,15 @@ export function SongView({
   initialPatterns: StrumPattern[];
 }) {
   const prefs = useSongPrefs(song.id, initialPrefs);
+  // The page refreshes in place when the analyzer delivers audio (a YouTube download) or a
+  // sheet. It is deliberately not remounted for that: a remount stops whatever is playing and
+  // throws away unsaved edits, twice per analysis. Only the audio source has to be picked up.
   const [audio, setAudio] = useState(initialAudio);
+  const [seenAudioId, setSeenAudioId] = useState(initialAudio?.id ?? null);
+  if ((initialAudio?.id ?? null) !== seenAudioId) {
+    setSeenAudioId(initialAudio?.id ?? null);
+    setAudio(initialAudio);
+  }
   const [patterns, setPatterns] = useState(initialPatterns);
   const [fontSize, changeFont] = useStoredNumber(FONT_KEY, 17, validFontSize);
   const scroll = useAutoScroll(song.bpm, fontSize);

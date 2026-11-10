@@ -28,8 +28,8 @@ export default async function SongPage({ params }: PageProps<"/songs/[id]">) {
   ]);
   return (
     <SongView
-      // Remount when the analyzer delivers a new sheet or audio, so local state starts fresh.
-      key={`${detail.sheet?.id ?? "none"}:${detail.audio?.id ?? "none"}`}
+      // One instance per song. New sheets and audio from the analyzer arrive as props.
+      key={detail.song.id}
       song={detail.song}
       chordpro={detail.sheet?.chordpro ?? ""}
       sheetOrigin={detail.sheet?.origin ?? null}
