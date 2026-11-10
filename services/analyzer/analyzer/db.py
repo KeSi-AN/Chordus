@@ -181,6 +181,37 @@ def set_source_file(
     )
 
 
+_TIME_DIRECTIVE = re.compile(r"^\{time:\s*([^}]+?)\s*\}", re.MULTILINE)
+
+
+@dataclass
+class Detected:
+    """Values earlier analyses of a song detected (so a re-analysis may replace them)."""
+
+    keys: set[str] = field(default_factory=set)
+    bpms: set[float] = field(default_factory=set)
+    time_signatures: set[str] = field(default_factory=set)
+
+
+def previously_detected(conn: sqlite3.Connection, song_id: str, analysis_id: str) -> Detected:
+    """What other analyses of this song wrote. Call before saving the new draft sheet."""
+    out = Detected()
+    for row in conn.execute(
+        "SELECT key, bpm FROM analyses WHERE song_id = ? AND id != ?", (song_id, analysis_id)
+    ):
+        if row["key"]:
+            out.keys.add(row["key"])
+        if row["bpm"]:
+            out.bpms.add(round(row["bpm"], 1))
+    for row in conn.execute(
+        "SELECT chordpro FROM chord_sheets WHERE song_id = ? AND origin = 'detected'", (song_id,)
+    ):
+        m = _TIME_DIRECTIVE.search(row["chordpro"])
+        if m:
+            out.time_signatures.add(m.group(1))
+    return out
+
+
 def update_song(
     conn: sqlite3.Connection,
     song_id: str,
@@ -191,20 +222,29 @@ def update_song(
     duration_sec: float | None = None,
     title: str | None = None,
     artist: str | None = None,
+    detected: Detected | None = None,
 ) -> None:
-    """Fill in analysis results without overwriting what the user typed."""
+    """Fill in analysis results without overwriting what the user typed.
+
+    A value is replaced when it is blank, or when it is what an earlier analysis detected
+    (`detected`): otherwise re-analyzing a song could never correct its key, tempo or meter.
+    """
     song = get_row(conn, "songs", song_id)
     if song is None:
         return
+    detected = detected or Detected()
     sets: dict[str, Any] = {}
-    if key and not song["original_key"]:
+    if key and (not song["original_key"] or song["original_key"] in detected.keys):
         sets["original_key"] = key
-    if bpm and not song["bpm"]:
+    if bpm and (not song["bpm"] or round(song["bpm"], 1) in detected.bpms):
         sets["bpm"] = round(bpm, 1)
     if duration_sec:
         sets["duration_sec"] = round(duration_sec, 2)
-    if time_signature and song["time_signature"] in (None, "4/4") and time_signature != "4/4":
-        sets["time_signature"] = time_signature
+    if time_signature:
+        current = song["time_signature"]
+        untouched_default = current in (None, "4/4") and not detected.time_signatures
+        if untouched_default or current in detected.time_signatures:
+            sets["time_signature"] = time_signature
     # Placeholder titles from the import form are replaced by real metadata.
     if title and (not song["title"] or song["title"].startswith("Untitled")):
         sets["title"] = title

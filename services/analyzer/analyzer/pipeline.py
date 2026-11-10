@@ -136,6 +136,8 @@ def run_analysis(
             bpm=harmony.bpm,
             time_signature=harmony.time_signature,
             duration_sec=harmony.duration,
+            # Values an earlier analysis filled in are replaced; the user's own are kept.
+            detected=dbm.previously_detected(conn, song_id, analysis_id),
         )
         song = dbm.get_row(conn, "songs", song_id)
         meta = {

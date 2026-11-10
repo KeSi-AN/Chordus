@@ -144,3 +144,49 @@ def test_touch_job_keeps_a_long_job_locked(db):
     dbm.touch_job(db, ids["job"])
     row = db.execute("SELECT status, locked_at FROM jobs WHERE id = ?", (ids["job"],)).fetchone()
     assert (row["status"], row["locked_at"]) == ("done", None)
+
+
+def _finished_analysis(db, song_id: str, key: str, bpm: float, time_signature: str) -> str:
+    analysis_id = f"a-{key}-{bpm}"
+    db.execute(
+        "INSERT INTO analyses (id, song_id, status, progress, key, bpm, created_at, updated_at) "
+        "VALUES (?, ?, 'done', 1, ?, ?, 0, 0)",
+        (analysis_id, song_id, key, bpm),
+    )
+    dbm.save_detected_sheet(db, song_id, f"{{key: {key}}}\n{{time: {time_signature}}}\n[{key}]")
+    return analysis_id
+
+
+def test_reanalysis_replaces_detected_values_but_not_the_users(db):
+    ids = make_song(db)
+    song_id = ids["song"]
+    first = dbm.previously_detected(db, song_id, ids["analysis"])
+    dbm.update_song(db, song_id, key="C", bpm=152.0, time_signature="4/4", detected=first)
+    _finished_analysis(db, song_id, "C", 152.0, "4/4")
+
+    # A second analysis corrects all three, because the first one wrote them.
+    again = dbm.previously_detected(db, song_id, "new")
+    assert (again.keys, again.bpms, again.time_signatures) == ({"C"}, {152.0}, {"4/4"})
+    dbm.update_song(db, song_id, key="G", bpm=76.0, time_signature="3/4", detected=again)
+    song = dbm.get_row(db, "songs", song_id)
+    assert (song["original_key"], song["bpm"], song["time_signature"]) == ("G", 76.0, "3/4")
+    _finished_analysis(db, song_id, "G", 76.0, "3/4")
+
+    # The user then sets their own values: a third analysis leaves those alone.
+    db.execute(
+        "UPDATE songs SET original_key = 'Em', bpm = 80, time_signature = '6/8' WHERE id = ?",
+        (song_id,),
+    )
+    third = dbm.previously_detected(db, song_id, "newer")
+    dbm.update_song(db, song_id, key="D", bpm=100.0, time_signature="4/4", detected=third)
+    song = dbm.get_row(db, "songs", song_id)
+    assert (song["original_key"], song["bpm"], song["time_signature"]) == ("Em", 80.0, "6/8")
+
+
+def test_user_reset_to_four_four_survives_reanalysis(db):
+    ids = make_song(db)
+    _finished_analysis(db, ids["song"], "G", 90.0, "3/4")
+    # Detected 3/4 earlier; the song says 4/4, so the user changed it back.
+    detected = dbm.previously_detected(db, ids["song"], "new")
+    dbm.update_song(db, ids["song"], time_signature="3/4", detected=detected)
+    assert dbm.get_row(db, "songs", ids["song"])["time_signature"] == "4/4"
