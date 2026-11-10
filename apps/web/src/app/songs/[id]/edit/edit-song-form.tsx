@@ -36,7 +36,7 @@ export function EditSongForm({
         bpm: meta.bpm ? Number(meta.bpm) : null,
         vocalistHint: meta.vocalistHint,
       });
-      if (sheet !== initialSheet) {
+      if (sheet !== initialSheet && sheet.trim()) {
         await sendJson(`/api/songs/${songId}/sheets`, "POST", { text: sheet });
       }
       router.push(`/songs/${songId}`);
@@ -46,6 +46,10 @@ export function EditSongForm({
       setSaving(false);
     }
   };
+
+  // A song imported from audio has no sheet until its analysis finishes (or if it failed), and
+  // its title, artist and key must still be editable. Only clearing an existing sheet is refused.
+  const clearedSheet = !sheet.trim() && Boolean(initialSheet.trim());
 
   const remove = async () => {
     if (!window.confirm(`Delete "${meta.title}" and its audio? This can't be undone.`)) return;
@@ -63,7 +67,9 @@ export function EditSongForm({
       <SongMetaFields value={meta} onChange={setMeta} keyPlaceholder="Unknown" />
       <SheetEditor value={sheet} onChange={setSheet} title={meta.title} />
       <p className="text-xs text-muted-foreground">
-        Saving a changed sheet keeps the old version and makes this one the primary sheet.
+        {clearedSheet
+          ? "The sheet can't be saved empty. Cancel to keep the current one."
+          : "Saving a changed sheet keeps the old version and makes this one the primary sheet."}
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -71,7 +77,7 @@ export function EditSongForm({
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={saving || !meta.title.trim() || !sheet.trim()}>
+        <Button type="submit" disabled={saving || !meta.title.trim() || clearedSheet}>
           {saving && <Loader2 className="animate-spin" />}
           Save
         </Button>
