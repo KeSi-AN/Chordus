@@ -11,6 +11,7 @@ from analyzer.lyrics import (
     clean_word,
     densest_vocal_window,
     drop_quiet_words,
+    segment_words,
     split_lines,
 )
 
@@ -23,13 +24,80 @@ def span(s: float, e: float, chord: str, conf: float = 0.9) -> ChordSpan:
     return ChordSpan(s, e, chord, conf)
 
 
-def test_split_lines_on_pause_punctuation_and_length():
-    words = [Word(0, 0.5, "one"), Word(0.6, 1, "two"), Word(2, 2.5, "three")]
-    assert [len(x.words) for x in split_lines(words)] == [2, 1]
-    words = [Word(i * 0.5, i * 0.5 + 0.4, "w.") for i in range(4)]
-    assert [len(x.words) for x in split_lines(words)] == [3, 1]
-    long = [Word(i * 0.3, i * 0.3 + 0.2, "w") for i in range(13)]
-    assert [len(x.words) for x in split_lines(long)] == [10, 3]
+def sung(start: float, text: str, gap: float = 0.0) -> list[Word]:
+    """Words the way Whisper times singing: back to back, `gap` seconds apart."""
+    return [
+        Word(start + i * (0.4 + gap), start + i * (0.4 + gap) + 0.4, w)
+        for i, w in enumerate(text.split())
+    ]
+
+
+def texts(lines: list[LyricLine]) -> list[str]:
+    return [" ".join(w.text for w in x.words) for x in lines]
+
+
+def test_split_lines_keeps_each_whisper_segment_as_a_line():
+    # Sung words run into each other, so only the segments say where the lines are.
+    segments = [
+        sung(30.0, "Took too long to be alone"),
+        sung(32.4, "My house clean"),
+        sung(33.6, "My pool warm"),
+    ]
+    assert texts(split_lines(segments)) == [
+        "Took too long to be alone",
+        "My house clean",
+        "My pool warm",
+    ]
+
+
+def test_split_lines_breaks_a_segment_at_a_long_pause():
+    segment = [*sung(10.0, "before the solo"), *sung(25.0, "after the solo")]
+    assert texts(split_lines([segment])) == ["before the solo", "after the solo"]
+    # A breath is not a line break.
+    breath = [*sung(10.0, "open"), *sung(11.5, "open")]
+    assert texts(split_lines([breath])) == ["open open"]
+
+
+def test_split_lines_divides_long_segments_at_clause_marks():
+    segment = sung(
+        85.0,
+        "So sweet, so tight, I won't bite, unless you like, if you smoke, I got the haze, "
+        "and if you're hungry, girl I got the lates",
+    )
+    lines = split_lines([segment])
+    assert len(lines) > 1
+    assert all(2 <= len(x.words) <= 12 for x in lines)
+    # Every break follows a comma, and that comma is dropped from the end of the line.
+    original = [w.text for w in segment]
+    position = 0
+    for x in lines[:-1]:
+        position += len(x.words)
+        assert original[position - 1].endswith(",")
+        assert not x.words[-1].text.endswith(",")
+    assert sum(len(x.words) for x in lines) == len(original)
+
+
+def test_split_lines_divides_unpunctuated_runs_evenly():
+    lines = split_lines([sung(0.0, " ".join(f"w{i}" for i in range(16)))])
+    assert [len(x.words) for x in lines] == [8, 8]
+    assert split_lines([]) == []
+
+
+def test_segment_words_drops_unreliable_segments_and_silence():
+    sr = 16000
+    y = np.zeros(sr * 6, dtype=np.float32)
+    y[:sr] = 0.3 * np.sin(np.arange(sr) / 10)
+    whisper_word = lambda s, e, w: {"start": s, "end": e, "word": w}  # noqa: E731
+    segments = [
+        {
+            "avg_logprob": -0.3,
+            "words": [whisper_word(0.2, 0.6, " real"), whisper_word(0.6, 0.9, " [x]")],
+        },
+        {"avg_logprob": -2.0, "words": [whisper_word(0.2, 0.6, " mumbled")]},
+        {"avg_logprob": -0.3, "words": [whisper_word(4.0, 4.5, " invented")]},
+        {"avg_logprob": -0.3, "words": [whisper_word(0.2, 0.6, " []")]},
+    ]
+    assert [[w.text for w in seg] for seg in segment_words(segments, y, sr)] == [["real", "x"]]
 
 
 def test_clean_word_removes_chordpro_syntax():
