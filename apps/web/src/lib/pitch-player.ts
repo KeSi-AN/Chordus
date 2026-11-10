@@ -57,6 +57,25 @@ export class PitchPlayer {
     } catch (err) {
       this.error = `Pitch shifting unavailable: ${(err as Error).message}`;
       console.error(err);
+      await this.playUnshifted();
+    }
+  }
+
+  /**
+   * Once createMediaElementSource has run, the element only sounds through the graph. If the
+   * shifter then fails to load, wire the element straight to the speakers: playing at the
+   * original pitch (with the error shown) beats a player that runs silently.
+   */
+  private async playUnshifted(): Promise<void> {
+    const routed = sources.get(this.audio);
+    if (!routed || routed.ctx.state === "closed") return;
+    try {
+      routed.node.disconnect();
+      routed.node.connect(routed.ctx.destination);
+      this.ctx = routed.ctx;
+      if (routed.ctx.state === "suspended") await routed.ctx.resume();
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -78,9 +97,20 @@ export class PitchPlayer {
   dispose(): void {
     this.node?.disconnect();
     this.node = null;
-    // The context stays tied to the element (see `sources`); suspend instead of closing.
-    void this.ctx?.suspend().catch(() => {});
+    const ctx = this.ctx;
+    const audio = this.audio;
     this.ctx = null;
     this.building = null;
+    if (!ctx) return;
+    // The context is tied to the element (see `sources`), and the element may be about to be
+    // reused: React re-runs effects on the same element in development. So suspend now, and
+    // close only once the element has really left the page. Without the close, every song
+    // played leaves a suspended AudioContext behind until the tab is reloaded.
+    void ctx.suspend().catch(() => {});
+    setTimeout(() => {
+      if (audio.isConnected) return;
+      sources.delete(audio);
+      void ctx.close().catch(() => {});
+    }, 0);
   }
 }

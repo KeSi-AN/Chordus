@@ -205,6 +205,10 @@ function Player({
     if (el) el.currentTime = t;
   };
 
+  // Loop points come from the element, not from `time`: that state follows timeupdate, which
+  // fires about four times a second, so a point set from it could be a quarter second late.
+  const now = () => audioRef.current?.currentTime ?? time;
+
   const tooFar = Math.abs(pitch.value) > COMFORTABLE_AUDIO_SHIFT;
 
   return (
@@ -314,7 +318,7 @@ function Player({
           <Button
             size="xs"
             variant={loopA !== null ? "secondary" : "outline"}
-            onClick={() => setLoopA(time)}
+            onClick={() => setLoopA(now())}
             title="Set loop start at the current time"
           >
             A{loopA !== null ? ` ${fmtTime(loopA)}` : ""}
@@ -322,7 +326,7 @@ function Player({
           <Button
             size="xs"
             variant={loopB !== null ? "secondary" : "outline"}
-            onClick={() => setLoopB(time)}
+            onClick={() => setLoopB(now())}
             title="Set loop end at the current time"
           >
             B{loopB !== null ? ` ${fmtTime(loopB)}` : ""}
