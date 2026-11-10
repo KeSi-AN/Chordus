@@ -3,6 +3,7 @@ import {
   getRequestContext,
   handleError,
   jsonError,
+  oversizedUpload,
   parseJson,
   vocalistHintSchema,
 } from "@/server/api";
@@ -26,6 +27,9 @@ export async function POST(req: Request) {
     const { db, userId } = await getRequestContext();
     const type = req.headers.get("content-type") ?? "";
     if (type.includes("multipart/form-data")) {
+      const maxBytes = getServerConfig().maxUploadBytes;
+      const tooLarge = oversizedUpload(req, maxBytes);
+      if (tooLarge) return tooLarge;
       const form = await req.formData();
       const file = form.get("file");
       if (!(file instanceof File)) return jsonError(400, "Missing file");
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
       const result = await importFromFile(db, getStorage(), {
         userId,
         file,
-        maxBytes: getServerConfig().maxUploadBytes,
+        maxBytes,
         title: text("title"),
         artist: text("artist"),
         vocalistHint: hint.success ? hint.data : undefined,

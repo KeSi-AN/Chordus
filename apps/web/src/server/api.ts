@@ -21,6 +21,19 @@ export function jsonError(status: number, error: string, details?: unknown): Res
   return Response.json({ error, ...(details ? { details } : {}) }, { status });
 }
 
+/**
+ * Refuse an upload by its declared size, before reading it. `req.formData()` buffers the whole
+ * body in memory, so without this a file of any size is read in full only to be rejected by
+ * the size check that follows.
+ */
+export function oversizedUpload(req: Request, maxBytes: number): Response | null {
+  const declared = Number(req.headers.get("content-length"));
+  // The multipart envelope and the other form fields add a little to the file's own size.
+  const allowance = 1024 * 1024;
+  if (!Number.isFinite(declared) || declared <= maxBytes + allowance) return null;
+  return jsonError(413, `File is larger than ${Math.round(maxBytes / 1024 / 1024)} MB`);
+}
+
 /** Map service errors to HTTP responses so route handlers stay small. */
 export function handleError(err: unknown): Response {
   if (err instanceof NotFoundError) return jsonError(404, err.message);
