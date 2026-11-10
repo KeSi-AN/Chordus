@@ -47,6 +47,21 @@ def test_parse_video_id_rejects(s):
         ("Song Karaoke", "Band - Topic", ("Song", "Band")),
         ("Band - Song | Sing King Karaoke", None, ("Song", "Band")),
         ("(Official Video)", None, ("(Official Video)", None)),
+        # Real titles: the first "|" section is the show or film, not the song.
+        (
+            "Coke Studio Season 10| Faasle| Kaavish & Quratulain Balouch",
+            "Coke Studio Pakistan",
+            ("Faasle", "Kaavish & Quratulain Balouch"),
+        ),
+        (
+            "ANIMAL: Hua Main (Full Video) | Ranbir K, Rashmika M | Sandeep V | Bhushan K",
+            "T-Series",
+            ("ANIMAL: Hua Main", "T-Series"),
+        ),
+        ("Song | Sing King Karaoke", "Sing King", ("Song", "Sing King")),
+        ("Song | Singer", None, ("Song", "Singer")),
+        ("Song (Official Lyric Video)", None, ("Song", None)),
+        ("Song (Full Video Song)", None, ("Song", None)),
     ],
 )
 def test_clean_title(title, uploader, expected):

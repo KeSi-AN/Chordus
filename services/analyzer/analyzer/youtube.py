@@ -35,22 +35,45 @@ def parse_video_id(url_or_id: str) -> str | None:
 
 
 _NOISE = re.compile(
-    r"\s*[\[(](?:official\s*(?:music\s*)?video|official\s*audio|lyrics?(?:\s*video)?|audio|"
-    r"karaoke(?:\s*version)?|instrumental|hd|hq|4k|visualizer|with lyrics|lyric video|"
-    r"sing along|remastered(?:\s*\d{4})?)[\])]",
+    r"\s*[\[(](?:official\s*(?:music\s*|lyric\s*)?video|official\s*audio|music\s*video|"
+    r"lyrics?(?:\s*video)?|lyrical(?:\s*video)?|audio|full\s*(?:video|audio)(?:\s*song)?|"
+    r"full\s*song|video\s*song|karaoke(?:\s*version)?|instrumental|hd|hq|4k|visualizer|"
+    r"with lyrics|lyric video|sing along|remastered(?:\s*\d{4})?)[\])]",
     re.IGNORECASE,
 )
+#: A "|" section containing one of these is channel promotion, not the performer.
+_PROMO = re.compile(r"karaoke|lyrics?|official|video|audio|channel|\bhd\b|\b4k\b", re.IGNORECASE)
+
+
+def _same_brand(part: str, uploader: str) -> bool:
+    """'Coke Studio Season 10' is the show of the channel 'Coke Studio Pakistan', not a song."""
+    a, b = part.lower().split(), uploader.lower().split()
+    if min(len(a), len(b)) >= 2:
+        return a[:2] == b[:2]
+    return a == b
 
 
 def clean_title(title: str, uploader: str | None = None) -> tuple[str, str | None]:
-    """'Artist - Song (Official Video) [Karaoke]' -> ('Song', 'Artist')."""
-    t = _NOISE.sub("", title).strip()
-    t = re.sub(r"\s*\|\s*.*$", "", t)  # "Song | Channel promo"
+    """'Artist - Song (Official Video) [Karaoke]' -> ('Song', 'Artist').
+
+    Titles divided by "|" are read as sections: a section naming the channel is dropped, the
+    first one left is the song, and a single remaining section is the performer
+    ('Show | Song | Performer' on a channel called 'Show ...').
+    """
+    cleaned = _NOISE.sub("", title).strip()
+    parts = [p.strip() for p in cleaned.split("|") if p.strip()]
+    if uploader and len(parts) > 1:
+        parts = [p for p in parts if not _same_brand(p, uploader)] or parts
+    t = parts[0] if parts else ""
+    # More than two sections is a credits list (cast, director, label), not "song | performer".
+    performer = parts[1] if len(parts) == 2 and not _PROMO.search(parts[1]) else None
     t = re.sub(r"\s+karaoke(?:\s+version)?$", "", t, flags=re.IGNORECASE).strip()
     artist: str | None = None
     m = re.match(r"^(.+?)\s+[-–—]\s+(.+)$", t)
     if m:
         artist, t = m.group(1).strip(), m.group(2).strip()
+    elif performer:
+        artist = performer
     elif uploader:
         artist = re.sub(r"\s*-\s*Topic$|VEVO$", "", uploader).strip() or None
     return t.strip(" -–—") or title.strip(), artist
