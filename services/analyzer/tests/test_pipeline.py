@@ -162,3 +162,18 @@ def test_health_endpoint(tmp_path):
     client = TestClient(create_app(cfg_for(tmp_path, melody=False), start_worker=False))
     body = client.get("/health").json()
     assert body["ok"] is True and body["worker"] is False and body["device"] == "cpu"
+
+
+def test_heartbeat_refreshes_the_job_lock(db, tmp_path):
+    import time
+
+    from analyzer.worker import Heartbeat
+
+    ids = make_song(db)
+    long_ago = 1_000_000_000_000
+    assert dbm.claim_job(db, now=long_ago) is not None
+    with Heartbeat(tmp_path / "test.db", ids["job"], interval=0.05):
+        time.sleep(0.5)
+    locked_at = db.execute("SELECT locked_at FROM jobs WHERE id = ?", (ids["job"],)).fetchone()[0]
+    assert locked_at > long_ago
+    assert dbm.claim_job(db) is None  # a live job is not handed to a second worker

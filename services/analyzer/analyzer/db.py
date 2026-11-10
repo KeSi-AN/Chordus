@@ -7,16 +7,20 @@ and writes rows. Timestamps are milliseconds since the epoch, like Drizzle's tim
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 MAX_ATTEMPTS = 3
-#: A running job whose lock is older than this is considered abandoned and is retried.
-STALE_LOCK_SECONDS = 30 * 60
+#: The worker refreshes a running job's lock this often (see worker.Heartbeat).
+HEARTBEAT_SECONDS = 20
+#: A running job whose lock is older than this is considered abandoned (the analyzer was
+#: stopped or crashed mid-job) and is retried. Kept short because the lock is refreshed.
+STALE_LOCK_SECONDS = 2 * 60
 
 
 def now_ms() -> int:
@@ -39,12 +43,50 @@ class Job:
     attempts: int
 
 
+def fail_exhausted_jobs(conn: sqlite3.Connection, now: int | None = None) -> int:
+    """Give up on abandoned jobs that have used all their attempts.
+
+    Without this they would stay `running` forever: never claimed again, with the song page
+    showing a spinner and refusing to start another analysis.
+    """
+    now = now or now_ms()
+    stale = now - STALE_LOCK_SECONDS * 1000
+    rows = conn.execute(
+        "SELECT id, payload FROM jobs WHERE status = 'running' AND locked_at < ? AND attempts >= ?",
+        (stale, MAX_ATTEMPTS),
+    ).fetchall()
+    message = f"The analyzer stopped while working on this {MAX_ATTEMPTS} times. Try again."
+    for row in rows:
+        conn.execute(
+            "UPDATE jobs SET status = 'failed', error = ?, locked_at = NULL, updated_at = ? "
+            "WHERE id = ? AND status = 'running'",
+            (message, now, row["id"]),
+        )
+        analysis_id = json.loads(row["payload"] or "{}").get("analysisId")
+        if analysis_id:
+            conn.execute(
+                "UPDATE analyses SET status = 'failed', stage = 'Failed', error = ?, "
+                "updated_at = ? WHERE id = ? AND status IN ('queued', 'running')",
+                (message, now, analysis_id),
+            )
+    return len(rows)
+
+
+def touch_job(conn: sqlite3.Connection, job_id: str, now: int | None = None) -> None:
+    """Refresh a running job's lock so it is not mistaken for an abandoned one."""
+    conn.execute(
+        "UPDATE jobs SET locked_at = ? WHERE id = ? AND status = 'running'",
+        (now or now_ms(), job_id),
+    )
+
+
 def claim_job(conn: sqlite3.Connection, now: int | None = None) -> Job | None:
     """Atomically take the oldest queued job (or an abandoned running one)."""
     now = now or now_ms()
     stale = now - STALE_LOCK_SECONDS * 1000
     conn.execute("BEGIN IMMEDIATE")
     try:
+        fail_exhausted_jobs(conn, now)
         row = conn.execute(
             """
             SELECT id, type, payload, attempts FROM jobs

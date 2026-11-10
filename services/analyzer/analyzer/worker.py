@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 import threading
 import time
 import traceback
+from pathlib import Path
 
 from . import db as dbm
 from .config import Config
@@ -13,6 +15,43 @@ from .pipeline import JobError, run_analysis
 from .storage import LocalStorage
 
 log = logging.getLogger(__name__)
+
+
+class Heartbeat:
+    """Keeps a running job's lock fresh from a background thread.
+
+    Stages such as stem separation and transcription run for minutes without touching the
+    database, so the lock cannot be refreshed from the pipeline itself. With a fresh lock, a job
+    whose lock *is* old really was abandoned, and can be retried after two minutes instead of
+    the half hour a fixed timeout would need.
+    """
+
+    def __init__(self, path: Path, job_id: str, interval: float = dbm.HEARTBEAT_SECONDS) -> None:
+        self.path = path
+        self.job_id = job_id
+        self.interval = interval
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, name="job-heartbeat", daemon=True)
+
+    def _run(self) -> None:
+        # SQLite connections are not shared between threads: this one belongs to the heartbeat.
+        conn = dbm.connect(self.path)
+        try:
+            while not self._stop.wait(self.interval):
+                try:
+                    dbm.touch_job(conn, self.job_id)
+                except sqlite3.Error:
+                    log.warning("Could not refresh the lock of job %s", self.job_id, exc_info=True)
+        finally:
+            conn.close()
+
+    def __enter__(self) -> Heartbeat:
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self._stop.set()
+        self._thread.join(timeout=5)
 
 
 class Worker:
@@ -37,7 +76,8 @@ class Worker:
         try:
             if job.type != "analyze":
                 raise JobError(f"Unknown job type {job.type}")
-            run_analysis(self.conn, self.storage, self.cfg, job.payload, **self.pipeline_kwargs)
+            with Heartbeat(self.cfg.sqlite_path, job.id):
+                run_analysis(self.conn, self.storage, self.cfg, job.payload, **self.pipeline_kwargs)
             dbm.finish_job(self.conn, job.id)
         except Exception as exc:  # noqa: BLE001 - every failure is recorded on the job
             message = str(exc) if isinstance(exc, JobError) else f"{type(exc).__name__}: {exc}"

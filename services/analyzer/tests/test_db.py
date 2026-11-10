@@ -114,3 +114,33 @@ def test_local_storage_rejects_traversal(tmp_path):
     for bad in ("../x", "audio/../../x", "C:/x", "/etc/passwd"):
         with pytest.raises(ValueError):
             s.path_for(bad)
+
+
+def test_exhausted_stale_job_is_failed_with_its_analysis(db):
+    ids = make_song(db)
+    t = 1_000_000_000_000
+    step = (dbm.STALE_LOCK_SECONDS + 1) * 1000
+    for attempt in range(dbm.MAX_ATTEMPTS):
+        assert dbm.claim_job(db, now=t + attempt * step) is not None
+    dbm.update_analysis(db, ids["analysis"], status="running", stage="Transcribing lyrics")
+    # The analyzer died on the last attempt too: the job must not stay "running" forever.
+    assert dbm.claim_job(db, now=t + dbm.MAX_ATTEMPTS * step) is None
+    job = db.execute("SELECT status, error, locked_at FROM jobs WHERE id = ?", (ids["job"],))
+    job = job.fetchone()
+    assert job["status"] == "failed" and job["locked_at"] is None
+    analysis = dbm.get_row(db, "analyses", ids["analysis"])
+    assert analysis["status"] == "failed" and "stopped" in analysis["error"]
+
+
+def test_touch_job_keeps_a_long_job_locked(db):
+    ids = make_song(db)
+    t = 1_000_000_000_000
+    assert dbm.claim_job(db, now=t) is not None
+    almost_stale = t + (dbm.STALE_LOCK_SECONDS - 1) * 1000
+    dbm.touch_job(db, ids["job"], now=almost_stale)
+    # Well past the original lock, but the heartbeat refreshed it.
+    assert dbm.claim_job(db, now=t + (dbm.STALE_LOCK_SECONDS + 30) * 1000) is None
+    dbm.finish_job(db, ids["job"])
+    dbm.touch_job(db, ids["job"])
+    row = db.execute("SELECT status, locked_at FROM jobs WHERE id = ?", (ids["job"],)).fetchone()
+    assert (row["status"], row["locked_at"]) == ("done", None)
