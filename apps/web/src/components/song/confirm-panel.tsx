@@ -48,7 +48,10 @@ export function ConfirmPanel({
   const status = prefs.dirty
     ? "Unsaved changes"
     : prefs.confirmedAt && !prefs.unconfirmed
-      ? `Confirmed ${new Date(prefs.confirmedAt).toLocaleDateString()}`
+      ? // The ISO date, not toLocaleDateString(): the server and the browser can disagree on the
+        // locale ("8/11/2026" vs "11/8/2026"), and a mismatch makes React throw away the
+        // server-rendered page and render it again.
+        `Confirmed ${prefs.confirmedAt.slice(0, 10)}`
       : "Not confirmed yet";
 
   return (
