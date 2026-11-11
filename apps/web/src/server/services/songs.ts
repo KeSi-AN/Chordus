@@ -55,6 +55,9 @@ export interface ListSongsInput {
   filter?: SongFilter;
   key?: string;
   limit?: number;
+  /** title: A-Z. recent: last opened first (never-opened songs are left out).
+   *  touched: most recently opened or changed first. */
+  sort?: "title" | "recent" | "touched";
 }
 
 /** Turn free text into a safe FTS5 prefix query: `"foo"* "bar"*`. */
@@ -93,6 +96,13 @@ export async function listSongs(db: Db, input: ListSongsInput): Promise<SongList
     const k = parseKey(input.key);
     if (k) conditions.push(eq(songs.originalKey, formatKey(k)));
   }
+  if (input.sort === "recent") conditions.push(sql`${lastOpened} IS NOT NULL`);
+  const order =
+    input.sort === "recent"
+      ? sql`${lastOpened} DESC`
+      : input.sort === "touched"
+        ? sql`MAX(COALESCE(${lastOpened}, 0), ${songs.updatedAt}) DESC`
+        : sql`lower(${songs.title})`;
 
   const rows = await db
     .select({
@@ -107,7 +117,7 @@ export async function listSongs(db: Db, input: ListSongsInput): Promise<SongList
     })
     .from(songs)
     .where(and(...conditions))
-    .orderBy(sql`lower(${songs.title})`)
+    .orderBy(order)
     .limit(input.limit ?? 500);
 
   return rows.map((r) => ({
@@ -284,19 +294,12 @@ export async function deleteSong(db: Db, userId: string, id: string): Promise<So
 
 /** Songs most recently opened or played. */
 export async function recentlyPlayed(db: Db, userId: string, limit = 6): Promise<SongListItem[]> {
-  const all = await listSongs(db, { userId });
-  return all
-    .filter((s) => s.lastOpenedAt)
-    .sort((a, b) => b.lastOpenedAt!.getTime() - a.lastOpenedAt!.getTime())
-    .slice(0, limit);
+  return listSongs(db, { userId, sort: "recent", limit });
 }
 
 /** Unconfirmed songs, most recently touched first. */
 export async function needsConfirming(db: Db, userId: string, limit = 6): Promise<SongListItem[]> {
-  const all = await listSongs(db, { userId, filter: "unconfirmed" });
-  const touched = (s: SongListItem) =>
-    Math.max(s.lastOpenedAt?.getTime() ?? 0, s.updatedAt.getTime());
-  return all.sort((a, b) => touched(b) - touched(a)).slice(0, limit);
+  return listSongs(db, { userId, filter: "unconfirmed", sort: "touched", limit });
 }
 
 /** Distinct original keys in the library (for the key filter). */

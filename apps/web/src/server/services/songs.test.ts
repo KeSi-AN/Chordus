@@ -117,6 +117,17 @@ describe("listSongs", () => {
     const pending = await needsConfirming(t.db, U, 50);
     expect(pending.map((s) => s.id)).not.toContain("seed-clementine");
   });
+
+  it("applies the limit after sorting, so the strips show the newest songs", async () => {
+    const recent = await recentlyPlayed(t.db, U, 1);
+    expect(recent.map((s) => s.id)).toEqual(["seed-amazing-grace"]);
+    const touched = (s: { lastOpenedAt: Date | null; updatedAt: Date }) =>
+      Math.max(s.lastOpenedAt?.getTime() ?? 0, s.updatedAt.getTime());
+    const pending = await needsConfirming(t.db, U, 50);
+    expect(pending.length).toBeGreaterThan(1);
+    expect(pending.map(touched)).toEqual(pending.map(touched).sort((a, b) => b - a));
+    expect(await needsConfirming(t.db, U, 1)).toEqual(pending.slice(0, 1));
+  });
 });
 
 describe("editing", () => {
