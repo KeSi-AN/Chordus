@@ -285,7 +285,7 @@ def superseded_vocal_stems(
 ) -> list[str]:
     """Forget the vocal stems of a song's older analyses and return their storage keys.
 
-    Each stem is ~10 MB per minute of audio and only the newest one is of any use.
+    Each stem is ~5 MB per minute of audio and only the newest one is of any use.
     """
     rows = conn.execute(
         "SELECT id, vocal_stem_path FROM analyses "
