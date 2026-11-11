@@ -79,6 +79,12 @@ artist, then for the same vocalist type, then across all songs, else 0.
    **Now / Next** strip (shown in capo shapes, compensated for the pitch shifter's delay).
 6. Fix anything via **Edit chords**, then **Mark as checked**. Songs with a pasted sheet can be
    analyzed too (_Detect chords_); your sheet stays primary.
+7. **Analyze again** replaces the key, tempo and meter an earlier analysis detected, but never
+   values you typed yourself, and keeps only the newest vocal stem.
+
+If the analyzer stops mid-job, the song page says so and the job restarts by itself within a couple
+of minutes of the analyzer coming back (three attempts, then it is marked failed). Audio longer than
+`ANALYZER_MAX_MINUTES` (default 20) and live streams are refused.
 
 How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/analyzer/spike/REPORT.md).
 
