@@ -45,7 +45,6 @@ uv run python -c "import torch; print(torch.cuda.is_available())"
 | 3     | Voice-fit learning                                                 | Not yet |
 | 4     | Browser extension                                                  | Not yet |
 | M1    | Android app: offline library, sheets, transpose, capo, confirm     | Done    |
-| M1    | Android app: offline library, sheets, transpose, capo, confirm     | Done    |
 
 ## Android app
 
@@ -98,13 +97,6 @@ of minutes of the analyzer coming back (three attempts, then it is marked failed
 
 How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/analyzer/spike/REPORT.md).
 
-## Android app
-
-`apps/mobile` is a Flutter app that syncs the library from the laptop over Wi-Fi and keeps
-it on the phone. See [apps/mobile/README.md](apps/mobile/README.md) to run it. Before using
-Chordus from other devices, set `CHORDUS_API_TOKEN` in `.env`: the API then needs it, and
-browsers ask for it once at `/unlock`.
-
 ## Known limitations
 
 - Pitch shifting beyond about ±4 semitones sounds noticeably artificial (SoundTouch). The app
@@ -143,8 +135,6 @@ browsers ask for it once at `/unlock`.
 | `pnpm db:seed`     | Seed default user, strum presets and sample public-domain songs       |
 | `pnpm db:reset`    | Delete the local DB, migrate and seed again                           |
 | `pnpm db:generate` | Generate a migration after editing `apps/web/src/server/db/schema.ts` |
-| `pnpm mobile`      | Run the Android app on a connected phone (`flutter run`)              |
-| `pnpm test:mobile` | Flutter tests for the Android app                                     |
 
 ## Layout
 
