@@ -11,6 +11,7 @@ export default tseslint.config(
       "**/.next/**",
       "**/.venv/**",
       "apps/web/**",
+      "apps/mobile/**",
       "data/**",
     ],
   },
