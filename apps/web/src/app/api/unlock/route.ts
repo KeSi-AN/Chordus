@@ -9,8 +9,10 @@ export async function POST(req: Request) {
   const next = safeNextPath(form.get("next"));
   const token = form.get("token");
   const expected = getServerConfig().apiToken;
+  // A relative Location: `req.url` names the host Next.js listens as ("localhost"), not the
+  // address a phone used to reach it, so an absolute URL would send the phone to itself.
   const redirect = (path: string, cookie?: string) => {
-    const headers = new Headers({ Location: new URL(path, req.url).toString() });
+    const headers = new Headers({ Location: path });
     if (cookie) headers.append("Set-Cookie", cookie);
     return new Response(null, { status: 303, headers });
   };
