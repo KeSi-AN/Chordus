@@ -346,3 +346,31 @@ export function transposeChordPro(chordpro: string, semitones: number): string {
     })
     .join("\n");
 }
+
+/** Distinct chord tokens of a parsed sheet's lyric lines, in order of first appearance. */
+export function sheetChordTokens(sheet: ParsedSheet): string[] {
+  const seen = new Set<string>();
+  for (const section of sheet.sections) {
+    for (const line of section.lines) {
+      if (line.type !== "lyrics") continue;
+      for (const seg of line.segments) if (seg.chord !== null) seen.add(seg.chord);
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * What each chord token of `chordpro` (as `parseChordPro` gives them) becomes when the sheet is
+ * transposed by `semitones`, spelled exactly as `transposeChordPro` would. A lookup table for
+ * clients that render a parsed sheet themselves: the Android app transposes offline from it.
+ */
+export function transposeChordTokens(
+  chordpro: string,
+  tokens: readonly string[],
+  semitones: number,
+): string[] {
+  if (semitones % 12 === 0) return [...tokens];
+  const source = sheetKey(chordpro);
+  const target = source ? transposeKey(source.key, semitones) : null;
+  return tokens.map((t) => (isChordSymbol(t) ? transposeChord(t, semitones, target) : t));
+}

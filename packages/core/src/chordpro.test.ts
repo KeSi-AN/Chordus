@@ -7,6 +7,8 @@ import {
   serializeChordPro,
   sheetKey,
   transposeChordPro,
+  transposeChordTokens,
+  sheetChordTokens,
   uniqueChords,
   countUncertain,
   splitUncertain,
@@ -203,5 +205,40 @@ describe("low-confidence chord marker", () => {
   it("leaves non-chord question marks alone", () => {
     expect(stripUncertainMarks("[Why?] [?]")).toBe("[Why?] [?]");
     expect(splitUncertain("?")).toEqual({ chord: "?", uncertain: false });
+  });
+});
+
+describe("transposeChordTokens", () => {
+  const SHEETS = [
+    SONG,
+    "{key: F}\n[F]Some [Bb/D?]draft [C7sus4]line [*Riff] [N.C.]\n{sot}\n[F]\n{eot}\n[Dm7b5]end",
+    "[A]no key [E]directive [F#m]here [D]",
+  ];
+  const chordsOf = (sheet: ReturnType<typeof parseChordPro>) =>
+    sheet.sections.flatMap((s) =>
+      s.lines.flatMap((l) => (l.type === "lyrics" ? l.segments.map((g) => g.chord) : [])),
+    );
+
+  it("gives the same chords as transposing the whole sheet, for every shift", () => {
+    for (const text of SHEETS) {
+      const parsed = parseChordPro(text);
+      const tokens = sheetChordTokens(parsed);
+      for (let n = -13; n <= 13; n++) {
+        const table = new Map(
+          tokens.map((t, i) => [t, transposeChordTokens(text, tokens, n)[i]!] as const),
+        );
+        const viaTable = chordsOf(parsed).map((c) => (c === null ? null : table.get(c)));
+        expect(viaTable).toEqual(chordsOf(parseChordPro(transposeChordPro(text, n))));
+      }
+    }
+  });
+
+  it("depends only on the shift modulo 12", () => {
+    const tokens = sheetChordTokens(parseChordPro(SHEETS[1]!));
+    for (let n = -11; n < 0; n++) {
+      expect(transposeChordTokens(SHEETS[1]!, tokens, n)).toEqual(
+        transposeChordTokens(SHEETS[1]!, tokens, n + 12),
+      );
+    }
   });
 });
