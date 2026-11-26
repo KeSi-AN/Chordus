@@ -5,6 +5,7 @@ import { DEFAULT_USER_ID as U } from "../constants";
 import { LocalStorage } from "../storage";
 import { createTestDb, type TestDb } from "../test-utils";
 import { attachAudioFile, getAudioSource, mimeTypeFor, parseRange } from "./audio";
+import { sources } from "../db/schema";
 import { getSongDetail, NotFoundError, ValidationError } from "./songs";
 import { createStrumPattern, listStrumPatterns } from "./strum";
 
@@ -78,6 +79,47 @@ describe("attachAudioFile", () => {
       /larger/,
     );
     await expect(getAudioSource(t.db, U, "nope")).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe("replacing audio", () => {
+  it("removes earlier uploads and a YouTube download, keeping the video id", async () => {
+    const songId = "seed-red-river-valley";
+    const mp3 = (name: string) =>
+      new File([new Uint8Array([1, 2, 3])], name, { type: "audio/mpeg" });
+    const first = await attachAudioFile(t.db, storage, {
+      userId: U,
+      songId,
+      file: mp3("a.mp3"),
+      maxBytes: 100,
+    });
+    // A YouTube source whose audio the analyzer downloaded.
+    const ytKey = `audio/${songId}/yt.m4a`;
+    await storage.put(ytKey, new Uint8Array([9]));
+    await t.db.insert(sources).values({
+      id: "yt-source",
+      songId,
+      kind: "youtube",
+      youtubeVideoId: "dQw4w9WgXcQ",
+      filePath: ytKey,
+    });
+
+    const second = await attachAudioFile(t.db, storage, {
+      userId: U,
+      songId,
+      file: mp3("b.mp3"),
+      maxBytes: 100,
+    });
+    const detail = await getSongDetail(t.db, U, songId);
+    expect(detail.audio?.id).toBe(second.id);
+    expect(detail.sources.map((s) => s.id)).not.toContain(first.id);
+    expect(detail.sources.find((s) => s.id === "yt-source")).toMatchObject({
+      youtubeVideoId: "dQw4w9WgXcQ",
+      filePath: null,
+    });
+    expect(await storage.stat(first.filePath!)).toBeNull();
+    expect(await storage.stat(ytKey)).toBeNull();
+    expect(await storage.stat(second.filePath!)).not.toBeNull();
   });
 });
 

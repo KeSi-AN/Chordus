@@ -51,23 +51,57 @@ export async function attachAudioFile(
 
   const id = crypto.randomUUID();
   const key = `audio/${input.songId}/${id}${ext}`;
-  await storage.put(key, file.stream());
-  await db.insert(sources).values({
-    id,
-    songId: input.songId,
-    kind: "file",
-    filePath: key,
-    originalFilename: file.name.slice(0, 255),
-    mimeType: file.type || null,
-  });
+  try {
+    await storage.put(key, file.stream());
+    await db.insert(sources).values({
+      id,
+      songId: input.songId,
+      kind: "file",
+      filePath: key,
+      originalFilename: file.name.slice(0, 255),
+      mimeType: file.type || null,
+    });
+  } catch (err) {
+    // An aborted upload must not leave a partial file behind.
+    await storage.delete(key).catch(() => {});
+    throw err;
+  }
+  const replaced = await releaseOlderAudio(db, storage, input.songId, id);
   await logEvent(db, {
     userId: input.userId,
     songId: input.songId,
     type: "audio_attached",
-    payload: { sourceId: id, filename: file.name, size: file.size },
+    payload: { sourceId: id, filename: file.name, size: file.size, replaced },
   });
   const [row] = await db.select().from(sources).where(eq(sources.id, id));
   return row!;
+}
+
+/**
+ * A song plays one audio file, the newest. Attaching a new one ("Replace") used to keep every
+ * earlier file on disk with nothing able to play it. Earlier uploads are removed; a YouTube
+ * source keeps its video id (the library is matched on it) but drops its downloaded file,
+ * which "Analyze again" would download afresh. Analyses of the old audio lose their source,
+ * so their chord timeline is no longer synced to audio it wasn't computed from.
+ */
+async function releaseOlderAudio(
+  db: Db,
+  storage: Storage,
+  songId: string,
+  keepId: string,
+): Promise<string[]> {
+  const older = (await db.select().from(sources).where(eq(sources.songId, songId))).filter(
+    (s) => s.id !== keepId && s.filePath && (s.kind === "file" || s.kind === "youtube"),
+  );
+  for (const s of older) {
+    if (s.kind === "file") {
+      await db.delete(sources).where(eq(sources.id, s.id));
+    } else {
+      await db.update(sources).set({ filePath: null, mimeType: null }).where(eq(sources.id, s.id));
+    }
+    await storage.delete(s.filePath!).catch(() => {});
+  }
+  return older.map((s) => s.id);
 }
 
 /** Look up an audio source and confirm it belongs to the user's song. */
