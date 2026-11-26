@@ -220,3 +220,7 @@ def test_local_storage_delete(tmp_path):
     assert not (tmp_path / "audio" / "a").exists()
     with pytest.raises(ValueError):
         s.delete_prefix("../outside")
+
+
+def test_connection_uses_wal(db):
+    assert db.execute("PRAGMA journal_mode").fetchone()[0].lower() == "wal"

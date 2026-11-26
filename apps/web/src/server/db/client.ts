@@ -20,7 +20,13 @@ export async function createDb(url: string, authToken?: string): Promise<DbHandl
   }
   const client = createClient({ url, authToken });
   await client.execute("PRAGMA foreign_keys = ON");
-  if (url.startsWith("file:")) await client.execute("PRAGMA busy_timeout = 5000");
+  if (url.startsWith("file:")) {
+    await client.execute("PRAGMA busy_timeout = 5000");
+    // The analyzer writes progress every few seconds while the web app reads (and now a phone
+    // syncs too). In WAL mode readers and the writer don't block each other. The setting is
+    // stored in the file, so the analyzer gets it too; `db:reset` already removes -wal/-shm.
+    if (!url.includes(":memory:")) await client.execute("PRAGMA journal_mode = WAL");
+  }
   return { db: drizzle(client, { schema }), client };
 }
 

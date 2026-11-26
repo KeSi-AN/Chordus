@@ -40,3 +40,15 @@ describe("migrations + seed", () => {
     expect(await search('"oh"*')).toEqual([]);
   });
 });
+
+describe("connection settings", () => {
+  it("uses WAL so the analyzer's writes don't block page loads", async () => {
+    const t = await createTestDb({ sampleSongs: false });
+    try {
+      const r = await t.client.execute("PRAGMA journal_mode");
+      expect(String(r.rows[0]![0]).toLowerCase()).toBe("wal");
+    } finally {
+      t.cleanup();
+    }
+  });
+});
