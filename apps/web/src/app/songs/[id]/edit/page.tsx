@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Edit song" };
 export default async function EditSongPage({ params }: PageProps<"/songs/[id]/edit">) {
   await connection();
   const { id } = await params;
-  const { song, sheet } = await loadSongOr404(id);
+  const { song, sheet } = await loadSongOr404(id, `/songs/${id}/edit`);
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Edit {song.title}</h1>

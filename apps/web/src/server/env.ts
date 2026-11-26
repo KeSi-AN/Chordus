@@ -25,6 +25,8 @@ export interface ServerConfig {
   maxUploadBytes: number;
   /** Base URL of the Python analyzer service (health checks only; jobs go through the DB). */
   analyzerUrl: string;
+  /** Access token for API calls and pages (see server/auth.ts). Unset: no checks. */
+  apiToken: string | undefined;
 }
 
 /** Resolve a `file:` URL with a relative path against the repo root, so cwd doesn't matter. */
@@ -45,5 +47,6 @@ export function getServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCon
     dataDir,
     maxUploadBytes: Number(env.MAX_UPLOAD_MB ?? 100) * 1024 * 1024,
     analyzerUrl: (env.ANALYZER_URL ?? "http://127.0.0.1:8000").replace(/\/$/, ""),
+    apiToken: env.CHORDUS_API_TOKEN?.trim() || undefined,
   };
 }

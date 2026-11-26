@@ -5,6 +5,7 @@ import { LibrarySearch } from "@/components/library-search";
 import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/server/db/client";
 import { DEFAULT_USER_ID } from "@/server/constants";
+import { requirePageAuth } from "@/server/pages";
 import {
   libraryKeys,
   listSongs,
@@ -19,6 +20,7 @@ const FILTERS: SongFilter[] = ["all", "confirmed", "unconfirmed", "has_audio"];
 
 export default async function LibraryPage({ searchParams }: PageProps<"/">) {
   await connection();
+  await requirePageAuth("/");
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : "";
   const filterParam = typeof params.filter === "string" ? params.filter : "all";

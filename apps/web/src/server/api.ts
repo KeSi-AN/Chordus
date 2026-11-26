@@ -1,4 +1,7 @@
+import { cookies, headers } from "next/headers";
 import { z } from "zod";
+import { isAuthorized, TOKEN_COOKIE, UnauthorizedError } from "./auth";
+import { getServerConfig } from "./env";
 import { getDb } from "./db/client";
 import { DEFAULT_USER_ID } from "./constants";
 import { NotFoundError, ValidationError } from "./services/songs";
@@ -14,7 +17,19 @@ export interface RequestContext {
  * API token gets checked (plan section 9).
  */
 export async function getRequestContext(): Promise<RequestContext> {
+  if (!(await requestIsAuthorized())) throw new UnauthorizedError();
   return { db: await getDb(), userId: DEFAULT_USER_ID };
+}
+
+/** Checks the current request against CHORDUS_API_TOKEN (always true when it is unset). */
+export async function requestIsAuthorized(): Promise<boolean> {
+  const token = getServerConfig().apiToken;
+  if (!token) return true;
+  const [h, c] = await Promise.all([headers(), cookies()]);
+  return isAuthorized(token, {
+    authorization: h.get("authorization"),
+    cookie: c.get(TOKEN_COOKIE)?.value,
+  });
 }
 
 export function jsonError(status: number, error: string, details?: unknown): Response {
@@ -36,6 +51,11 @@ export function oversizedUpload(req: Request, maxBytes: number): Response | null
 
 /** Map service errors to HTTP responses so route handlers stay small. */
 export function handleError(err: unknown): Response {
+  if (err instanceof UnauthorizedError) {
+    const res = jsonError(401, err.message);
+    res.headers.set("WWW-Authenticate", "Bearer");
+    return res;
+  }
   if (err instanceof NotFoundError) return jsonError(404, err.message);
   if (err instanceof ValidationError) return jsonError(400, err.message);
   if (err instanceof z.ZodError) {
