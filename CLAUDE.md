@@ -12,6 +12,13 @@ review at the end of each phase.
 - `services/analyzer`: Python (uv) worker + FastAPI health endpoint. Polls the `jobs` table,
   writes `analyses`, sources and detected `chord_sheets`. Never changes the schema: migrations
   live in `apps/web/drizzle`.
+- `apps/mobile`: Flutter Android app (`com.chordus.chordus`). Syncs from the web app's
+  `/api/mobile/*` and works offline. No music theory in Dart: the server sends every
+  transpose/capo choice precomputed from `packages/core`. flutter_bloc + go_router,
+  very_good_analysis. Flutter is at `~/flutter/bin` (not on PATH in every shell).
+- `apps/mobile`: Flutter Android app (flutter_bloc, go_router, very_good_analysis). Syncs from
+  `/api/mobile/*` and does no music theory itself: the server sends lookup tables built by
+  `packages/core`. Test with `pnpm test:mobile` (not part of `pnpm test`).
 - Later phases: `apps/extension` (Chrome MV3).
 
 ## Commands
@@ -20,6 +27,7 @@ review at the end of each phase.
   `pnpm analyzer` for one of them)
 - Analyzer only: `cd services/analyzer && uv run pytest -q`, `uv run ruff check analyzer tests`
 - `pnpm test`: all Vitest projects and pytest
+- Mobile: `pnpm test:mobile` (`flutter test` in apps/mobile), `cd apps/mobile && flutter analyze`
 - `pnpm lint` / `pnpm typecheck` / `pnpm format`
 - `pnpm db:migrate` / `pnpm db:seed` / `pnpm db:reset` / `pnpm db:generate` (after schema edits)
 

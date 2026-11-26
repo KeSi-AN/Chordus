@@ -44,6 +44,16 @@ uv run python -c "import torch; print(torch.cuda.is_available())"
 | 2     | Analyzer (chords from audio + YouTube)                             | Done    |
 | 3     | Voice-fit learning                                                 | Not yet |
 | 4     | Browser extension                                                  | Not yet |
+| M1    | Android app: offline library, sheets, transpose, capo, confirm     | Done    |
+| M1    | Android app: offline library, sheets, transpose, capo, confirm     | Done    |
+
+## Android app
+
+`apps/mobile` is a Flutter app for your phone: the library, chord sheets with transpose and capo,
+and Confirm, synced from this server over Wi-Fi and saved on the phone for offline use. Setup and
+details: [apps/mobile/README.md](apps/mobile/README.md). Before using it, set `CHORDUS_API_TOKEN`
+in `.env`: the server is then closed to anyone without the token, and browsers on other devices
+ask for it once at `/unlock`.
 
 ## Using it (Phase 1)
 
@@ -88,6 +98,13 @@ of minutes of the analyzer coming back (three attempts, then it is marked failed
 
 How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/analyzer/spike/REPORT.md).
 
+## Android app
+
+`apps/mobile` is a Flutter app that syncs the library from the laptop over Wi-Fi and keeps
+it on the phone. See [apps/mobile/README.md](apps/mobile/README.md) to run it. Before using
+Chordus from other devices, set `CHORDUS_API_TOKEN` in `.env`: the API then needs it, and
+browsers ask for it once at `/unlock`.
+
 ## Known limitations
 
 - Pitch shifting beyond about ±4 semitones sounds noticeably artificial (SoundTouch). The app
@@ -116,6 +133,9 @@ How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/
 | `pnpm analyzer`    | Run only the analyzer (API on :8000 + job worker)                     |
 | `pnpm build`       | Production build                                                      |
 | `pnpm test`        | All tests: Vitest (web + core) and pytest (analyzer)                  |
+| `pnpm test:mobile` | Flutter tests for the Android app (needs Flutter on PATH)             |
+| `pnpm mobile`      | Run the Android app on a connected phone (`flutter run`)              |
+| `pnpm mobile:apk`  | Build an installable APK                                              |
 | `pnpm lint`        | ESLint (root packages + Next.js app) and ruff (analyzer)              |
 | `pnpm typecheck`   | TypeScript in every workspace                                         |
 | `pnpm format`      | Prettier                                                              |
@@ -123,6 +143,8 @@ How the chord detector was chosen: [services/analyzer/spike/REPORT.md](services/
 | `pnpm db:seed`     | Seed default user, strum presets and sample public-domain songs       |
 | `pnpm db:reset`    | Delete the local DB, migrate and seed again                           |
 | `pnpm db:generate` | Generate a migration after editing `apps/web/src/server/db/schema.ts` |
+| `pnpm mobile`      | Run the Android app on a connected phone (`flutter run`)              |
+| `pnpm test:mobile` | Flutter tests for the Android app                                     |
 
 ## Layout
 
@@ -134,8 +156,10 @@ apps/web
   worklets/         Pitch-shift AudioWorklet (bundled to public/worklets by esbuild)
   drizzle/          SQL migrations
 packages/core       Pure TypeScript music logic (keys, chords, ChordPro, capo, strum, suggestions)
+apps/mobile         Flutter Android app (syncs from /api/mobile/*, works offline)
 services/analyzer   Python worker (uv): yt-dlp, key/BPM/chords (librosa), Demucs + pYIN melody,
                     FastAPI /health. Picks jobs from the DB `jobs` table.
+apps/mobile         Flutter Android app (offline library synced from /api/mobile)
 data/               Local SQLite DB and uploaded audio (git-ignored)
 ```
 

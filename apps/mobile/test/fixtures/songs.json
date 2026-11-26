@@ -1,0 +1,37 @@
+{
+  "songs": [
+    {
+      "id": "seed-amazing-grace",
+      "title": "Amazing Grace",
+      "artist": "Traditional",
+      "originalKey": "G",
+      "updatedAt": "2026-11-26T10:41:15.000Z",
+      "hasAudio": false,
+      "confirmed": false,
+      "lastOpenedAt": null,
+      "version": "1795689675000.1795689675000.0.1795689675000"
+    },
+    {
+      "id": "seed-clementine",
+      "title": "Oh My Darling, Clementine",
+      "artist": "Traditional",
+      "originalKey": "F",
+      "updatedAt": "2026-11-26T10:41:15.000Z",
+      "hasAudio": false,
+      "confirmed": true,
+      "lastOpenedAt": null,
+      "version": "1795689675000.1795689675000.1795689675118.1795689675000"
+    },
+    {
+      "id": "seed-red-river-valley",
+      "title": "Red River Valley",
+      "artist": "Traditional",
+      "originalKey": "D",
+      "updatedAt": "2026-11-26T10:41:15.000Z",
+      "hasAudio": false,
+      "confirmed": false,
+      "lastOpenedAt": null,
+      "version": "1795689675000.1795689675000.0.1795689675000"
+    }
+  ]
+}

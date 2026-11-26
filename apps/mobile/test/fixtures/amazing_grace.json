@@ -1,0 +1,1372 @@
+{
+  "song": {
+    "id": "seed-amazing-grace",
+    "title": "Amazing Grace",
+    "artist": "Traditional",
+    "originalKey": "G",
+    "bpm": 80,
+    "timeSignature": "3/4",
+    "version": "1795689675000.1795689675000.0.1795689675000",
+    "sheet": {
+      "id": "a026d82a-2417-45e3-b9aa-de6ed3b098c3",
+      "origin": "imported_open",
+      "parsed": {
+        "meta": {
+          "title": "Amazing Grace",
+          "artist": "Traditional",
+          "key": "G",
+          "time": "3/4",
+          "tempo": "80"
+        },
+        "sections": [
+          {
+            "kind": "verse",
+            "label": "Verse 1",
+            "lines": [
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "A"
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "mazing "
+                  },
+                  {
+                    "chord": "G7",
+                    "lyrics": "grace, how "
+                  },
+                  {
+                    "chord": "C",
+                    "lyrics": "sweet the "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "sound"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "That saved a wretch like "
+                  },
+                  {
+                    "chord": "D",
+                    "lyrics": "me"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "I "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "once was "
+                  },
+                  {
+                    "chord": "G7",
+                    "lyrics": "lost, but "
+                  },
+                  {
+                    "chord": "C",
+                    "lyrics": "now am "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "found"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "Was "
+                  },
+                  {
+                    "chord": "Em",
+                    "lyrics": "blind, but "
+                  },
+                  {
+                    "chord": "D",
+                    "lyrics": "now I "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "see"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "verse",
+            "label": "Verse 2",
+            "lines": [
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "'Twas "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "grace that "
+                  },
+                  {
+                    "chord": "G7",
+                    "lyrics": "taught my "
+                  },
+                  {
+                    "chord": "C",
+                    "lyrics": "heart to "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "fear"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "And grace my fears re"
+                  },
+                  {
+                    "chord": "D",
+                    "lyrics": "lieved"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "How "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "precious "
+                  },
+                  {
+                    "chord": "G7",
+                    "lyrics": "did that "
+                  },
+                  {
+                    "chord": "C",
+                    "lyrics": "grace ap"
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "pear"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "The "
+                  },
+                  {
+                    "chord": "Em",
+                    "lyrics": "hour I "
+                  },
+                  {
+                    "chord": "D",
+                    "lyrics": "first be"
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "lieved"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "verse",
+            "label": "Verse 3",
+            "lines": [
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "Through "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "many "
+                  },
+                  {
+                    "chord": "G7",
+                    "lyrics": "dangers, "
+                  },
+                  {
+                    "chord": "C",
+                    "lyrics": "toils and "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "snares"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "I have al - ready "
+                  },
+                  {
+                    "chord": "D",
+                    "lyrics": "come"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "'Tis "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "grace hath "
+                  },
+                  {
+                    "chord": "G7",
+                    "lyrics": "brought me "
+                  },
+                  {
+                    "chord": "C",
+                    "lyrics": "safe thus "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "far"
+                  }
+                ]
+              },
+              {
+                "type": "lyrics",
+                "segments": [
+                  {
+                    "chord": null,
+                    "lyrics": "And "
+                  },
+                  {
+                    "chord": "Em",
+                    "lyrics": "grace will "
+                  },
+                  {
+                    "chord": "D",
+                    "lyrics": "lead me "
+                  },
+                  {
+                    "chord": "G",
+                    "lyrics": "home"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "chords": [
+        "G",
+        "G7",
+        "C",
+        "D",
+        "Em"
+      ]
+    },
+    "shapes": [
+      {
+        "key": "G",
+        "chords": [
+          "G",
+          "G7",
+          "C",
+          "D",
+          "Em"
+        ]
+      },
+      {
+        "key": "Ab",
+        "chords": [
+          "Ab",
+          "Ab7",
+          "Db",
+          "Eb",
+          "Fm"
+        ]
+      },
+      {
+        "key": "A",
+        "chords": [
+          "A",
+          "A7",
+          "D",
+          "E",
+          "F#m"
+        ]
+      },
+      {
+        "key": "Bb",
+        "chords": [
+          "Bb",
+          "Bb7",
+          "Eb",
+          "F",
+          "Gm"
+        ]
+      },
+      {
+        "key": "B",
+        "chords": [
+          "B",
+          "B7",
+          "E",
+          "F#",
+          "G#m"
+        ]
+      },
+      {
+        "key": "C",
+        "chords": [
+          "C",
+          "C7",
+          "F",
+          "G",
+          "Am"
+        ]
+      },
+      {
+        "key": "Db",
+        "chords": [
+          "Db",
+          "Db7",
+          "Gb",
+          "Ab",
+          "Bbm"
+        ]
+      },
+      {
+        "key": "D",
+        "chords": [
+          "D",
+          "D7",
+          "G",
+          "A",
+          "Bm"
+        ]
+      },
+      {
+        "key": "Eb",
+        "chords": [
+          "Eb",
+          "Eb7",
+          "Ab",
+          "Bb",
+          "Cm"
+        ]
+      },
+      {
+        "key": "E",
+        "chords": [
+          "E",
+          "E7",
+          "A",
+          "B",
+          "C#m"
+        ]
+      },
+      {
+        "key": "F",
+        "chords": [
+          "F",
+          "F7",
+          "Bb",
+          "C",
+          "Dm"
+        ]
+      },
+      {
+        "key": "F#",
+        "chords": [
+          "F#",
+          "F#7",
+          "B",
+          "C#",
+          "D#m"
+        ]
+      }
+    ],
+    "sounding": [
+      {
+        "key": "G",
+        "capoOptions": [
+          {
+            "capo": 0,
+            "shapeKey": "G",
+            "score": 10,
+            "openRatio": 1,
+            "reason": "No capo, G shapes, 100% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "D",
+            "score": 8.27,
+            "openRatio": 0.92,
+            "reason": "Capo 5, D shapes, 92% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "C",
+            "score": 7.28,
+            "openRatio": 0.83,
+            "reason": "Capo 7, C shapes, 83% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "E",
+            "score": 7.05,
+            "openRatio": 0.75,
+            "reason": "Capo 3, E shapes, 75% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "F",
+            "score": 2.55,
+            "openRatio": 0.25,
+            "reason": "Capo 2, F shapes, 25% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "F#",
+            "score": 0.4,
+            "openRatio": 0,
+            "reason": "Capo 1, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "B",
+            "score": -0.17,
+            "openRatio": 0.33,
+            "reason": "Capo 8, B shapes, 33% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "Eb",
+            "score": -0.2,
+            "openRatio": 0,
+            "reason": "Capo 4, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "Db",
+            "score": -0.6,
+            "openRatio": 0,
+            "reason": "Capo 6, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "Bb",
+            "score": -2.7,
+            "openRatio": 0,
+            "reason": "Capo 9, Bb shapes, 0% open chords"
+          }
+        ],
+        "audioShift": 0
+      },
+      {
+        "key": "Ab",
+        "capoOptions": [
+          {
+            "capo": 1,
+            "shapeKey": "G",
+            "score": 9.8,
+            "openRatio": 1,
+            "reason": "Capo 1, G shapes, 100% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "D",
+            "score": 8.07,
+            "openRatio": 0.92,
+            "reason": "Capo 6, D shapes, 92% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "E",
+            "score": 6.85,
+            "openRatio": 0.75,
+            "reason": "Capo 4, E shapes, 75% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "C",
+            "score": 5.58,
+            "openRatio": 0.83,
+            "reason": "Capo 8, C shapes, 83% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "F",
+            "score": 2.35,
+            "openRatio": 0.25,
+            "reason": "Capo 3, F shapes, 25% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "Ab",
+            "score": 0.6,
+            "openRatio": 0,
+            "reason": "No capo, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "F#",
+            "score": 0.2,
+            "openRatio": 0,
+            "reason": "Capo 2, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "B",
+            "score": -0.37,
+            "openRatio": 0.33,
+            "reason": "Capo 9, B shapes, 33% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "Eb",
+            "score": -0.4,
+            "openRatio": 0,
+            "reason": "Capo 5, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "Db",
+            "score": -0.8,
+            "openRatio": 0,
+            "reason": "Capo 7, Db shapes, 0% open chords"
+          }
+        ],
+        "audioShift": 1
+      },
+      {
+        "key": "A",
+        "capoOptions": [
+          {
+            "capo": 2,
+            "shapeKey": "G",
+            "score": 9.6,
+            "openRatio": 1,
+            "reason": "Capo 2, G shapes, 100% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "A",
+            "score": 8.97,
+            "openRatio": 0.92,
+            "reason": "No capo, A shapes, 92% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "D",
+            "score": 7.87,
+            "openRatio": 0.92,
+            "reason": "Capo 7, D shapes, 92% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "E",
+            "score": 6.65,
+            "openRatio": 0.75,
+            "reason": "Capo 5, E shapes, 75% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "C",
+            "score": 5.38,
+            "openRatio": 0.83,
+            "reason": "Capo 9, C shapes, 83% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "F",
+            "score": 2.15,
+            "openRatio": 0.25,
+            "reason": "Capo 4, F shapes, 25% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "Ab",
+            "score": 0.4,
+            "openRatio": 0,
+            "reason": "Capo 1, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "F#",
+            "score": 0,
+            "openRatio": 0,
+            "reason": "Capo 3, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "Eb",
+            "score": -0.6,
+            "openRatio": 0,
+            "reason": "Capo 6, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "Db",
+            "score": -2.5,
+            "openRatio": 0,
+            "reason": "Capo 8, Db shapes, 0% open chords"
+          }
+        ],
+        "audioShift": 2
+      },
+      {
+        "key": "Bb",
+        "capoOptions": [
+          {
+            "capo": 3,
+            "shapeKey": "G",
+            "score": 9.4,
+            "openRatio": 1,
+            "reason": "Capo 3, G shapes, 100% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "A",
+            "score": 8.77,
+            "openRatio": 0.92,
+            "reason": "Capo 1, A shapes, 92% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "E",
+            "score": 6.45,
+            "openRatio": 0.75,
+            "reason": "Capo 6, E shapes, 75% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "D",
+            "score": 6.17,
+            "openRatio": 0.92,
+            "reason": "Capo 8, D shapes, 92% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "F",
+            "score": 1.95,
+            "openRatio": 0.25,
+            "reason": "Capo 5, F shapes, 25% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "Bb",
+            "score": 0.6,
+            "openRatio": 0,
+            "reason": "No capo, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "Ab",
+            "score": 0.2,
+            "openRatio": 0,
+            "reason": "Capo 2, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "F#",
+            "score": -0.2,
+            "openRatio": 0,
+            "reason": "Capo 4, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "Eb",
+            "score": -0.8,
+            "openRatio": 0,
+            "reason": "Capo 7, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "Db",
+            "score": -2.7,
+            "openRatio": 0,
+            "reason": "Capo 9, Db shapes, 0% open chords"
+          }
+        ],
+        "audioShift": 3
+      },
+      {
+        "key": "B",
+        "capoOptions": [
+          {
+            "capo": 4,
+            "shapeKey": "G",
+            "score": 9.2,
+            "openRatio": 1,
+            "reason": "Capo 4, G shapes, 100% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "A",
+            "score": 8.57,
+            "openRatio": 0.92,
+            "reason": "Capo 2, A shapes, 92% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "E",
+            "score": 6.25,
+            "openRatio": 0.75,
+            "reason": "Capo 7, E shapes, 75% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "D",
+            "score": 5.97,
+            "openRatio": 0.92,
+            "reason": "Capo 9, D shapes, 92% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "B",
+            "score": 2.93,
+            "openRatio": 0.33,
+            "reason": "No capo, B shapes, 33% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "F",
+            "score": 1.75,
+            "openRatio": 0.25,
+            "reason": "Capo 6, F shapes, 25% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "Bb",
+            "score": 0.4,
+            "openRatio": 0,
+            "reason": "Capo 1, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "Ab",
+            "score": 0,
+            "openRatio": 0,
+            "reason": "Capo 3, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "F#",
+            "score": -0.4,
+            "openRatio": 0,
+            "reason": "Capo 5, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "Eb",
+            "score": -2.5,
+            "openRatio": 0,
+            "reason": "Capo 8, Eb shapes, 0% open chords"
+          }
+        ],
+        "audioShift": 4
+      },
+      {
+        "key": "C",
+        "capoOptions": [
+          {
+            "capo": 5,
+            "shapeKey": "G",
+            "score": 9,
+            "openRatio": 1,
+            "reason": "Capo 5, G shapes, 100% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "C",
+            "score": 8.68,
+            "openRatio": 0.83,
+            "reason": "No capo, C shapes, 83% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "A",
+            "score": 8.37,
+            "openRatio": 0.92,
+            "reason": "Capo 3, A shapes, 92% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "E",
+            "score": 4.55,
+            "openRatio": 0.75,
+            "reason": "Capo 8, E shapes, 75% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "B",
+            "score": 2.73,
+            "openRatio": 0.33,
+            "reason": "Capo 1, B shapes, 33% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "F",
+            "score": 1.55,
+            "openRatio": 0.25,
+            "reason": "Capo 7, F shapes, 25% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "Bb",
+            "score": 0.2,
+            "openRatio": 0,
+            "reason": "Capo 2, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "Ab",
+            "score": -0.2,
+            "openRatio": 0,
+            "reason": "Capo 4, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "F#",
+            "score": -0.6,
+            "openRatio": 0,
+            "reason": "Capo 6, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "Eb",
+            "score": -2.7,
+            "openRatio": 0,
+            "reason": "Capo 9, Eb shapes, 0% open chords"
+          }
+        ],
+        "audioShift": 5
+      },
+      {
+        "key": "Db",
+        "capoOptions": [
+          {
+            "capo": 6,
+            "shapeKey": "G",
+            "score": 8.8,
+            "openRatio": 1,
+            "reason": "Capo 6, G shapes, 100% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "C",
+            "score": 8.48,
+            "openRatio": 0.83,
+            "reason": "Capo 1, C shapes, 83% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "A",
+            "score": 8.17,
+            "openRatio": 0.92,
+            "reason": "Capo 4, A shapes, 92% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "E",
+            "score": 4.35,
+            "openRatio": 0.75,
+            "reason": "Capo 9, E shapes, 75% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "B",
+            "score": 2.53,
+            "openRatio": 0.33,
+            "reason": "Capo 2, B shapes, 33% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "Db",
+            "score": 0.6,
+            "openRatio": 0,
+            "reason": "No capo, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "Bb",
+            "score": 0,
+            "openRatio": 0,
+            "reason": "Capo 3, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "F",
+            "score": -0.15,
+            "openRatio": 0.25,
+            "reason": "Capo 8, F shapes, 25% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "Ab",
+            "score": -0.4,
+            "openRatio": 0,
+            "reason": "Capo 5, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "F#",
+            "score": -0.8,
+            "openRatio": 0,
+            "reason": "Capo 7, F# shapes, 0% open chords"
+          }
+        ],
+        "audioShift": -6
+      },
+      {
+        "key": "D",
+        "capoOptions": [
+          {
+            "capo": 0,
+            "shapeKey": "D",
+            "score": 9.27,
+            "openRatio": 0.92,
+            "reason": "No capo, D shapes, 92% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "G",
+            "score": 8.6,
+            "openRatio": 1,
+            "reason": "Capo 7, G shapes, 100% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "C",
+            "score": 8.28,
+            "openRatio": 0.83,
+            "reason": "Capo 2, C shapes, 83% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "A",
+            "score": 7.97,
+            "openRatio": 0.92,
+            "reason": "Capo 5, A shapes, 92% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "B",
+            "score": 2.33,
+            "openRatio": 0.33,
+            "reason": "Capo 3, B shapes, 33% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "Db",
+            "score": 0.4,
+            "openRatio": 0,
+            "reason": "Capo 1, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "Bb",
+            "score": -0.2,
+            "openRatio": 0,
+            "reason": "Capo 4, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "F",
+            "score": -0.35,
+            "openRatio": 0.25,
+            "reason": "Capo 9, F shapes, 25% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "Ab",
+            "score": -0.6,
+            "openRatio": 0,
+            "reason": "Capo 6, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "F#",
+            "score": -2.5,
+            "openRatio": 0,
+            "reason": "Capo 8, F# shapes, 0% open chords"
+          }
+        ],
+        "audioShift": -5
+      },
+      {
+        "key": "Eb",
+        "capoOptions": [
+          {
+            "capo": 1,
+            "shapeKey": "D",
+            "score": 9.07,
+            "openRatio": 0.92,
+            "reason": "Capo 1, D shapes, 92% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "C",
+            "score": 8.08,
+            "openRatio": 0.83,
+            "reason": "Capo 3, C shapes, 83% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "A",
+            "score": 7.77,
+            "openRatio": 0.92,
+            "reason": "Capo 6, A shapes, 92% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "G",
+            "score": 6.9,
+            "openRatio": 1,
+            "reason": "Capo 8, G shapes, 100% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "B",
+            "score": 2.13,
+            "openRatio": 0.33,
+            "reason": "Capo 4, B shapes, 33% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "Eb",
+            "score": 0.6,
+            "openRatio": 0,
+            "reason": "No capo, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "Db",
+            "score": 0.2,
+            "openRatio": 0,
+            "reason": "Capo 2, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "Bb",
+            "score": -0.4,
+            "openRatio": 0,
+            "reason": "Capo 5, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "Ab",
+            "score": -0.8,
+            "openRatio": 0,
+            "reason": "Capo 7, Ab shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "F#",
+            "score": -2.7,
+            "openRatio": 0,
+            "reason": "Capo 9, F# shapes, 0% open chords"
+          }
+        ],
+        "audioShift": -4
+      },
+      {
+        "key": "E",
+        "capoOptions": [
+          {
+            "capo": 2,
+            "shapeKey": "D",
+            "score": 8.87,
+            "openRatio": 0.92,
+            "reason": "Capo 2, D shapes, 92% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "C",
+            "score": 7.88,
+            "openRatio": 0.83,
+            "reason": "Capo 4, C shapes, 83% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "E",
+            "score": 7.65,
+            "openRatio": 0.75,
+            "reason": "No capo, E shapes, 75% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "A",
+            "score": 7.57,
+            "openRatio": 0.92,
+            "reason": "Capo 7, A shapes, 92% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "G",
+            "score": 6.7,
+            "openRatio": 1,
+            "reason": "Capo 9, G shapes, 100% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "B",
+            "score": 1.93,
+            "openRatio": 0.33,
+            "reason": "Capo 5, B shapes, 33% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "Eb",
+            "score": 0.4,
+            "openRatio": 0,
+            "reason": "Capo 1, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "Db",
+            "score": 0,
+            "openRatio": 0,
+            "reason": "Capo 3, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "Bb",
+            "score": -0.6,
+            "openRatio": 0,
+            "reason": "Capo 6, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "Ab",
+            "score": -2.5,
+            "openRatio": 0,
+            "reason": "Capo 8, Ab shapes, 0% open chords"
+          }
+        ],
+        "audioShift": -3
+      },
+      {
+        "key": "F",
+        "capoOptions": [
+          {
+            "capo": 3,
+            "shapeKey": "D",
+            "score": 8.67,
+            "openRatio": 0.92,
+            "reason": "Capo 3, D shapes, 92% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "C",
+            "score": 7.68,
+            "openRatio": 0.83,
+            "reason": "Capo 5, C shapes, 83% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "E",
+            "score": 7.45,
+            "openRatio": 0.75,
+            "reason": "Capo 1, E shapes, 75% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "A",
+            "score": 5.87,
+            "openRatio": 0.92,
+            "reason": "Capo 8, A shapes, 92% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "F",
+            "score": 2.95,
+            "openRatio": 0.25,
+            "reason": "No capo, F shapes, 25% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "B",
+            "score": 1.73,
+            "openRatio": 0.33,
+            "reason": "Capo 6, B shapes, 33% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "Eb",
+            "score": 0.2,
+            "openRatio": 0,
+            "reason": "Capo 2, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 4,
+            "shapeKey": "Db",
+            "score": -0.2,
+            "openRatio": 0,
+            "reason": "Capo 4, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "Bb",
+            "score": -0.8,
+            "openRatio": 0,
+            "reason": "Capo 7, Bb shapes, 0% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "Ab",
+            "score": -2.7,
+            "openRatio": 0,
+            "reason": "Capo 9, Ab shapes, 0% open chords"
+          }
+        ],
+        "audioShift": -2
+      },
+      {
+        "key": "F#",
+        "capoOptions": [
+          {
+            "capo": 4,
+            "shapeKey": "D",
+            "score": 8.47,
+            "openRatio": 0.92,
+            "reason": "Capo 4, D shapes, 92% open chords"
+          },
+          {
+            "capo": 6,
+            "shapeKey": "C",
+            "score": 7.48,
+            "openRatio": 0.83,
+            "reason": "Capo 6, C shapes, 83% open chords"
+          },
+          {
+            "capo": 2,
+            "shapeKey": "E",
+            "score": 7.25,
+            "openRatio": 0.75,
+            "reason": "Capo 2, E shapes, 75% open chords"
+          },
+          {
+            "capo": 9,
+            "shapeKey": "A",
+            "score": 5.67,
+            "openRatio": 0.92,
+            "reason": "Capo 9, A shapes, 92% open chords"
+          },
+          {
+            "capo": 1,
+            "shapeKey": "F",
+            "score": 2.75,
+            "openRatio": 0.25,
+            "reason": "Capo 1, F shapes, 25% open chords"
+          },
+          {
+            "capo": 7,
+            "shapeKey": "B",
+            "score": 1.53,
+            "openRatio": 0.33,
+            "reason": "Capo 7, B shapes, 33% open chords"
+          },
+          {
+            "capo": 0,
+            "shapeKey": "F#",
+            "score": 0.6,
+            "openRatio": 0,
+            "reason": "No capo, F# shapes, 0% open chords"
+          },
+          {
+            "capo": 3,
+            "shapeKey": "Eb",
+            "score": 0,
+            "openRatio": 0,
+            "reason": "Capo 3, Eb shapes, 0% open chords"
+          },
+          {
+            "capo": 5,
+            "shapeKey": "Db",
+            "score": -0.4,
+            "openRatio": 0,
+            "reason": "Capo 5, Db shapes, 0% open chords"
+          },
+          {
+            "capo": 8,
+            "shapeKey": "Bb",
+            "score": -2.5,
+            "openRatio": 0,
+            "reason": "Capo 8, Bb shapes, 0% open chords"
+          }
+        ],
+        "audioShift": -1
+      }
+    ],
+    "prefs": {
+      "transpose": {
+        "value": -2,
+        "source": "artist_median",
+        "confidence": 0.45,
+        "reason": "−2: your usual shift for Traditional (1 confirmed song)",
+        "state": "suggested"
+      },
+      "audioPitch": {
+        "value": -2,
+        "source": "linked",
+        "confidence": 0.45,
+        "reason": "Follows the chord transpose (−2)",
+        "state": "suggested"
+      },
+      "capo": {
+        "value": 3,
+        "source": "capo_ranking",
+        "confidence": 0.86,
+        "reason": "Capo 3, D shapes, 92% open chords (song sounds in F)",
+        "state": "suggested"
+      },
+      "strum": {
+        "value": "preset-waltz-downs",
+        "source": "time_signature",
+        "confidence": 0.3,
+        "reason": "A common 3/4 pattern. Strumming isn't detected, so adjust to taste.",
+        "state": "suggested"
+      },
+      "pitchLinked": true,
+      "confirmedAt": null
+    },
+    "audio": null
+  }
+}
